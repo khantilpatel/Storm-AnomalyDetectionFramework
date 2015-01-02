@@ -1,0 +1,339 @@
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+       http:// www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<html>
+<head>
+    <title>Real-time Visualization Tweets Sentiment</title>
+    <style type="text/css">
+        .chart div {
+            font: 15px Rokkitt;
+            background-color: steelblue;
+            text-align: right;
+            padding: 3px;
+            margin: 1px;
+            color: white;
+        }
+
+        .chart rect {
+            stroke: white;
+            fill: steelblue;
+        }
+
+        .chart text {
+            fill: white;
+        }
+
+        button {
+            font-family: Rokkitt;
+            text-shadow: 0.025em 0.025em 0.025em rgba(0, 0, 0, 0.8);
+        }
+    </style>
+    <link rel='stylesheet' type='text/css' href="assets/css/bootstrap.min.css"/>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="http://code.highcharts.com/stock/highstock.js"></script>
+    <script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
+    <script src="assets/js/bootstrap.min.js"/>
+    <link rel='stylesheet' type='text/css' href='http://fonts.googleapis.com/css?family=Rokkitt'>
+
+    <script type='text/javascript'>
+    </script>
+</head>
+<body style="font-family: Rokkitt; font-size: 1em; text-shadow: 0.025em 0.025em 0.025em rgba(0, 0, 0, 0.8);">
+<center>
+    &nbsp;&nbsp;&nbsp;
+    <div id="btns" style="width:700px;">
+        <button value="Start" id="start" class="btn btn-primary btn-large"><i
+                class="icon-white icon-play"></i> Start Stream
+        </button>
+        &nbsp;&nbsp;&nbsp;
+        <button value="Stop" id="stop" class="btn btn-warning btn-large"
+                style="font-family: Rokkitt; text-shadow: 0.025em 0.025em 0.025em rgba(0, 0, 0, 0.8); color:#000000"><i
+                class="icon-black icon-stop"></i> Stop Stream
+        </button>
+    </div>
+   <div id="texthilite" style="width:700px;">
+        <center>
+            <h2 style="font-family: Rokkitt; text-shadow: 0.025em 0.025em 0.025em rgba(0, 0, 0, 0.8);">
+                Real-time sentiment anomaly detection in Twitter data stream</h2>
+        </center>
+    </div>
+    <div id="chart" style="width:1400px; height:600px;"></div>
+    <div id="raw"></div>
+
+    <script>
+// Sentiment Notation:
+// 0 Negative, 2 Neutral, 4 Positive
+// //////////////////////////////////////////////////////////////////////////////////////
+    if (!window.WebSocket) {
+        alert("WebSocket not supported by this browser");
+    }
+
+    function createDateAsUTC(date) {
+        return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()));
+        }
+    
+    var data = new Array();
+    var oldDate = null;
+    function newDataReceived(newData) {
+        var jsonData = JSON.parse(newData);
+
+    	//var x = (new Date()).getTime();
+	// y = Math.round(Math.random() * 100);
+		var or_date = new Date(jsonData.x);
+		var newDate = createDateAsUTC(or_date);
+		var x =  newDate.getTime();
+		var seriesNegative = chart.series[0];
+		seriesNegative.addPoint([x, parseInt(jsonData.y0)], false, false);
+		
+		y = Math.round(Math.random() * 100);
+		var seriesNeutral = chart.series[1];
+		seriesNeutral.addPoint([x, parseInt(jsonData.y2)],  false, false);
+	
+		var seriesPositive = chart.series[2];
+		seriesPositive.addPoint([x, parseInt(jsonData.y4)], false, false);
+		
+		var seriesNegativeFlag = chart.series[3];
+		var seriesNeutralFlag = chart.series[4];
+		var seriesPositiveFlag = chart.series[5];
+		
+		if(jsonData.a0 == 1){
+		var flagPoint = {};
+		flagPoint.x = x;
+		flagPoint.title ='A';
+		flagPoint.text ='#TDF \n Win \n Happy '+y;    						
+		seriesNegativeFlag.addPoint(flagPoint, false,false);
+		}
+		
+		if(jsonData.a2 == 1){
+			var flagPoint = {};
+			flagPoint.x = x;
+			flagPoint.title ='A';
+			flagPoint.text ='#TDF \n Win \n Happy '+y;    						
+			seriesNeutralFlag.addPoint(flagPoint, false,false);
+		}
+		
+		if(jsonData.a4 == 1){
+			var flagPoint = {};
+			flagPoint.x = x;
+			flagPoint.title ='A';
+			flagPoint.text ='#TDF \n Win \n Happy '+y;    						
+			seriesPositiveFlag.addPoint(flagPoint, false,false);
+			}
+	 	
+		if(this.oldDate == null || this.oldDate.getDate() < newDate.getDate() || 
+				this.oldDate.getMonth() < newDate.getMonth()){
+		//|| this.oldDate.getHours() < 4*newDate.getHours())){
+		 chart.redraw();
+		 this.oldDate = newDate;
+		// console.log("redraw\n");
+		}
+		
+		var oldDay = this.oldDate.getDate();
+	 	var newDay = newDate.getDate();
+		
+    }
+// /////////////////////////////////////////////////////////////////////////////////////////
+    var socket = {
+        start: function () {
+            var location = "ws://localhost:9292/stormAD";
+            this._ws = new WebSocket(location);
+            this._ws.onmessage = this._onmessage;
+            this._ws.onclose = this._onclose;
+        },
+
+        _onmessage: function (m) {
+            if (m.data) {
+                var theData = m.data;
+                newDataReceived(m.data);
+            }
+        },
+
+        _onclose: function (m) {
+            if (this._ws) {
+                this._ws.close();
+            }
+        }
+    };
+// /////////////////////////////////////////////////////////////////////////////////////////
+    function stop() {
+        socket._onclose(null);
+    }
+
+    function start() {
+        socket.start();
+    }
+
+    $(function () {
+        $('#start').on('click', function (e) {
+            start();
+        });
+        $('#stop').on('click', function (e) {
+            stop();
+        });
+    });     
+
+    
+// /////////////////////////////////////////////////////////////////////////////////////////
+    var chart = new Highcharts.StockChart({
+        chart: {
+           renderTo: 'chart',
+           
+    	   /*
+			 * events : { load : function() { // set up the updating of the
+			 * chart each second var seriesPositive = this.series[0];
+			 * setInterval(function() { var x = (new Date()).getTime(), //
+			 * current time y = Math.round(Math.random() * 100);
+			 * seriesPositive.addPoint([x, y], false, true); }, 1000);
+			 * 
+			 * var seriesNeutral = this.series[1]; setInterval(function() { var
+			 * x = (new Date()).getTime(), // current time y =
+			 * Math.round(Math.random() * 100); seriesNeutral.addPoint([x, y],
+			 * false, true); }, 1000);
+			 * 
+			 * var seriesNegative = this.series[2]; var seriesNegativeFlag =
+			 * this.series[3]; setInterval(function() { var x = (new
+			 * Date()).getTime(), // current time y = Math.round(Math.random() *
+			 * 100); seriesNegative.addPoint([x, y], true, true); var flagPoint =
+			 * {}; flagPoint.x = x; flagPoint.title ='A'; flagPoint.text ='New
+			 * anomaly detected at '+y; seriesNegativeFlag.addPoint(flagPoint,
+			 * false,false); }, 1000); } }
+			 */
+    		},
+    		legend:{
+    			align:"center",
+    			enabled: true,
+    			verticalAlign:"top"
+    		},
+    		rangeSelector: {
+    			buttons: [{
+    				count: 2,
+    				type: 'day',
+    				text: '2d'
+    			}, {
+    				count: 6,
+    				type: 'day',
+    				text: '6d'
+    			}, {
+    				type: 'all',
+    				text: 'All'
+    			}],
+    			inputEnabled: true,
+    			selected: 0
+    		},
+    		xAxis: {
+				type: 'datetime',
+		/*
+		 * dateTimeLabelFormats: { day: '%e of %b' },
+		 */
+			//	minRange:3600000,
+					// ,
+			// max: 400
+			// tickPixelInterval: 15,
+				// maxZoom: 20 * 1000
+			},
+			yAxis: {
+				minPadding: 0.2,
+				maxPadding: 0.2,
+				title: {
+					text: 'Value',
+					margin: 80
+				}
+			},
+    		/*
+			 * title : { //text : 'Live random data' },
+			 */
+    		
+    		exporting: {
+    			enabled: false
+    		},
+    		
+    		series : [
+					{
+						name : 'Negative',
+						color:'#FF0000',
+						data :[],
+						id:'negative'
+				/*
+				 * data : (function() { // generate an array of random data var
+				 * data = [], time = (new Date()).getTime(), i;
+				 * 
+				 * for( i = -9; i <= 0; i++) { data.push([ time + i * 1000,
+				 * Math.round(Math.random() * 3) ]); } return data; })(),
+				 */
+						// id:'negative'
+					},				
+    		{
+    			name : 'Neutral',
+    			color:'#A4A4A4',
+    			data :[],
+				id:'neutral'
+    			/*
+				 * ,data : (function() { // generate an array of random data var
+				 * data = [], time = (new Date()).getTime(), i;
+				 * 
+				 * for( i = -9; i <= 0; i++) { data.push([ time + i * 1000,
+				 * Math.round(Math.random() * 3) ]); } return data; })()
+				 */
+    		},
+    		{
+    			name : 'Positive',
+    			color:'#00FF40',
+    			data: [],
+    			id:'positive'
+    			/*
+				 * ,data : (function() { // generate an array of random data var
+				 * data = [], time = (new Date()).getTime(), i;
+				 * 
+				 * for( i = -9; i <= 0; i++) { data.push([ time + i * 1000,
+				 * Math.round(Math.random() * 3) ]); } return data; })()
+				 */
+    		},
+    		{
+			    type : 'flags',
+			    data : [],
+			    onSeries : 'negative',  // Id of which series it should be
+										// placed on. If not defined
+			                    // the flag series will be put on the X axis
+			    shape : 'flag'  // Defines the shape of the flags.
+			},
+    		{
+			    type : 'flags',
+			    data : [],
+			    onSeries : 'neutral',  // Id of which series it should be
+										// placed on. If not defined
+			                    // the flag series will be put on the X axis
+			    shape : 'flag'  // Defines the shape of the flags.
+			},
+			{
+			    type : 'flags',
+			    data : [],
+			    onSeries : 'positive',  // Id of which series it should be
+										// placed on. If not defined
+			                    // the flag series will be put on the X axis
+			    shape : 'flag'  // Defines the shape of the flags.
+			}
+			
+    		],    
+    	});
+
+    </script>
+ 
+</center>
+</body>
+</html>

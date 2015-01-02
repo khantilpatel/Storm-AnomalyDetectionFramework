@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>Highcharts Example</title>
+		
+		
+		<!-- 1. Add these JavaScript inclusions in the head of your page -->
+
+			
+		   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="http://code.highcharts.com/stock/highstock.js"></script>
+    <script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
+    
+		<!-- 2. Add the JavaScript to initialize the chart on document ready -->
+		<script>
+		var chart; // global
+		
+	    if (!window.WebSocket) {
+	        alert("WebSocket not supported by this browser");
+	    }
+
+
+	    function newDataReceived(newData) {
+	        var jsonData = JSON.parse(newData);
+
+	    	//var series = chart.series[0],
+			//shift = series.data.length > 20; // shift if the series is longer than 20
+			//var x = (new Date()).getTime();
+			x =  (new Date(jsonData.x)).getTime();
+		// add the point
+			chart.series[0].addPoint([x, parseInt(jsonData.y4)], false, true);
+			
+	    	
+		//	y = Math.round(Math.random() * 100);
+	/* 		x =  (new Date(jsonData.x)).getTime();
+			var seriesNegative = chart.series[0];
+			seriesNegative.addPoint([x, parseInt(jsonData.y0)], false, true);
+			
+			y = Math.round(Math.random() * 100);
+			var seriesNeutral = chart.series[1];
+			seriesNeutral.addPoint([x, parseInt(jsonData.y2)], false, true);
+			
+		
+			var seriesPositive = chart.series[2];
+			seriesPositive.addPoint([x, parseInt(jsonData.y4)], true, true); */
+			
+			//chart.redraw();
+	    }
+	// /////////////////////////////////////////////////////////////////////////////////////////
+	    var socket = {
+	        start: function () {
+	            var location = "ws://localhost:9292/stormAD";
+	            this._ws = new WebSocket(location);
+	            this._ws.onmessage = this._onmessage;
+	            this._ws.onclose = this._onclose;
+	        },
+
+	        _onmessage: function (m) {
+	            if (m.data) {
+	                var theData = m.data;
+	                newDataReceived(m.data);
+	            }
+	        },
+
+	        _onclose: function (m) {
+	            if (this._ws) {
+	                this._ws.close();
+	            }
+	        }
+	    };
+	// /////////////////////////////////////////////////////////////////////////////////////////
+	    function stop() {
+	        socket._onclose(null);
+	    }
+
+	    function start() {
+	        socket.start();
+	    }
+
+	    $(function () {
+	        $('#start').on('click', function (e) {
+	            start();
+	        });
+	        $('#stop').on('click', function (e) {
+	            stop();
+	        });
+	    });     
+
+		/**
+		 * Request data from the server, add it to the graph and set a timeout to request again
+		 */
+		function requestData() {
+			$.ajax({
+				url: 'live-server-data.php', 
+				success: function(point) {
+					var series = chart.series[0],
+						shift = series.data.length > 20; // shift if the series is longer than 20
+		
+					// add the point
+					chart.series[0].addPoint(eval(point), true, shift);
+					
+					// call it again after one second
+					setTimeout(requestData, 1000);	
+				},
+				cache: false
+			});
+		}
+			
+		$(document).ready(function() {
+			chart = new Highcharts.StockChart({
+				chart: {
+					renderTo: 'container',
+					//,defaultSeriesType: 'spline',
+					events: {
+						load: start
+					}
+				},
+				legend:{
+	    			align:"center",
+	    			enabled: true,
+	    			verticalAlign:"top"
+	    		},
+	    		rangeSelector: {
+	    			buttons: [{
+	    				count: 1,
+	    				type: 'minute',
+	    				text: '1M'
+	    			}, {
+	    				count: 5,
+	    				type: 'minute',
+	    				text: '5M'
+	    			}, {
+	    				type: 'all',
+	    				text: 'All'
+	    			}],
+	    			inputEnabled: false,
+	    			selected: 0
+	    		},
+				title: {
+					text: 'Live random data'
+				},
+				xAxis: {
+					type: 'datetime',
+					max: 200,
+					//tickPixelInterval: 150
+					//maxZoom: 20 * 10000
+				},
+				yAxis: {
+					minPadding: 0.2,
+					maxPadding: 0.2,
+					title: {
+						text: 'Value',
+						margin: 80
+					}
+				},
+				
+				series: [{
+					name: 'Random data',
+					data: []
+				}]
+			});		
+		});
+		</script>
+		
+	</head>
+	<body>
+		
+		<!-- 3. Add the container -->
+		<div id="container" style="width: 1400px; height: 600px; margin: 0 auto"></div>
+		
+		<div style="width: 800px; margin: 0 auto">
+			<p>This example shows how to run a live chart with data retrieved from the server
+			each second. Study the source code for details.</p>
+			<p>This is the content of the PHP file, <a href="live-server-data.php">
+				live-server-data.php</a>:</p>
+<pre>&lt;?php 
+// Set the JSON header
+header("Content-type: text/json");
+
+// The x value is the current JavaScript time, which is the Unix time multiplied by 1000.
+$x = time() * 1000;
+// The y value is a random number
+$y = rand(0, 100);
+
+// Create a PHP array and echo it as JSON
+$ret = array($x, $y);
+echo json_encode($ret);
+?&gt;</pre>
+			
+		</div>
+	</body>
+</html>
