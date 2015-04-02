@@ -2,7 +2,7 @@ package algo.ad.feeder.dao;
 
 public enum TweetSentiment {
 	
-	POSITIVE(0), NEUTRAL(2), NEGATIVE(4);
+	NEGATIVE(0), NEUTRAL(2),POSITIVE(4);
 	 
 	private int sentimentCode;
  
