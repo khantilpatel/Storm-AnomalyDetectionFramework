@@ -64,12 +64,12 @@ public class SummarizeSentimentBolt extends BaseRichBolt {
 		Date tempDate = (Date) otherFields.get(2); // 0: counter, 1: //
 													// sentement_Id, //
 													// 2:Date_object
-		boolean isAnomalous = (boolean) otherFields.get(3);
+		Integer isAnomalous = (Integer) otherFields.get(3);
 
-		if(isAnomalous)
-		{
-			System.out.println("Got ya");
-		}
+//		if(isAnomalous)
+//		{
+//			System.out.println("Got ya");
+//		}
 		if (tempDate != null) {
 			current_date = tempDate;
 		}
@@ -77,22 +77,20 @@ public class SummarizeSentimentBolt extends BaseRichBolt {
 		if (currentSentiment == 0 && negative_sentiment_count == null) {
 			negative_sentiment_count = currentCounter;
 			
-			if(isAnomalous)
-			is_negative_sentiment_anomalous = 1;
+			
+			is_negative_sentiment_anomalous = isAnomalous;
 		}
 
 		if (currentSentiment == 2 && neutral_sentiment_count == null) {
 			neutral_sentiment_count = currentCounter;
 			
-			if(isAnomalous)
-			is_neutral_sentiment_anomalous = 1;
+			is_neutral_sentiment_anomalous = isAnomalous;
 		}
 
 		if (currentSentiment == 4 && positive_sentiment_count == null) {
 			positive_sentiment_count = currentCounter;
 			
-			if(isAnomalous)
-			is_positive_sentiment_anomalous = 1;
+			is_positive_sentiment_anomalous = isAnomalous;
 		}
 
 		if (positive_sentiment_count != null && neutral_sentiment_count != null

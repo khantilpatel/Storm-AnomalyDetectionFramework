@@ -34,9 +34,9 @@ public final class StormRunner {
       throws InterruptedException {
     LocalCluster cluster = new LocalCluster();
     cluster.submitTopology(topologyName, conf, topology);
-    Thread.sleep((long) runtimeInSeconds * MILLIS_IN_SEC);
-    cluster.killTopology(topologyName);
-    cluster.shutdown();
+   // Thread.sleep((long) runtimeInSeconds * MILLIS_IN_SEC);
+   // cluster.killTopology(topologyName);
+  //  cluster.shutdown();
   }
 
   public static void runTopologyRemotely(StormTopology topology, String topologyName, Config conf)

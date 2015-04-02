@@ -39,6 +39,8 @@ public final class SentimentAnomalyRunner {
 	public final static int SENTIMENT_LOG = 2;
 	
 	public static final void main(final String[] args) throws Exception {
+		
+		
 		final ApplicationContext applicationContext = new ClassPathXmlApplicationContext("applicationContext.xml");
 
 		final JmsProvider jmsQueueProvider = new SpringJmsProvider(applicationContext, "jmsConnectionFactory",

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import algo.ad.feeder.dao.TweetSentiment;
 import algo.ad.utility.Algorithm_EWMA_STDEV;
 import algo.ad.utility.Algorithm_Peak_Windows;
 import algo.ad.utility.Bin;
@@ -48,28 +49,32 @@ import com.google.common.collect.Lists;
 
 public class AnomalyDetectionBolt_PEWA_STDEV extends BaseRichBolt {
 
-	//********Constants**************
-	final static int SENTIMENT_LOG = 2;	
-	//*******************************
-	
-	
+	// ********Constants**************
+	final static int SENTIMENT_LOG = 2;
+	// *******************************
+
 	private static final long serialVersionUID = 5537727428628598519L;
 	// private static final Logger LOG =
 	// Logger.getLogger(TweetAggregateBolt.class);
-	//private static final int DEFALUT_AGGREGATE_IN_MINUTES = 360;
+	// private static final int DEFALUT_AGGREGATE_IN_MINUTES = 360;
 	Date nextAggregateDate;
 	int currentSentiment;
 	// private final List<Object> tweetsCounter;
 	private int counter;
 	private OutputCollector collector;
-	Algorithm_EWMA_STDEV algo_anomalyDetection;
+	Algorithm_EWMA_STDEV positive_algo_anomalyDetection;
+	Algorithm_EWMA_STDEV neutral_algo_anomalyDetection;
+	Algorithm_EWMA_STDEV negative_algo_anomalyDetection;
 
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void prepare(Map stormConf, TopologyContext context,
 			OutputCollector collector) {
 		this.collector = collector;
-		algo_anomalyDetection = new Algorithm_EWMA_STDEV();
+		negative_algo_anomalyDetection = new Algorithm_EWMA_STDEV(TweetSentiment.NEGATIVE, "out_negative");
+		neutral_algo_anomalyDetection = new Algorithm_EWMA_STDEV(TweetSentiment.NEUTRAL, "out_neutral");
+		positive_algo_anomalyDetection = new Algorithm_EWMA_STDEV(TweetSentiment.POSITIVE, "out_positive");
+		
 		// lastModifiedTracker = new
 		// NthLastModifiedTimeTracker(deriveNumWindowChunksFrom(this.windowLengthInSeconds,
 		// this.emitFrequencyInSeconds));
@@ -85,16 +90,17 @@ public class AnomalyDetectionBolt_PEWA_STDEV extends BaseRichBolt {
 		Date date = new java.util.Date();
 		// LOG.debug("TweetAggregateBolt: Emit Aggregate, Count:"+count+
 		// "||Sentiment:"+sentiment+"||Timestamp: "+date);
-		if(sentiment ==  SENTIMENT_LOG){
-		System.out.println("TweetAggregateBolt: Emit Aggregate, Count:" + count
-				+ "||Sentiment:" + sentiment + "||Timestamp: " + date);
+		if (sentiment == SENTIMENT_LOG) {
+			System.out.println("TweetAggregateBolt: Emit Aggregate, Count:"
+					+ count + "||Sentiment:" + sentiment + "||Timestamp: "
+					+ date);
 		}
 		counter = 0;
 		// collector.emit(new Values(count, date));
 	}
 
 	private void countObjAndAck(Tuple tuple) {
-		boolean isAnomaly = false;
+		int isAnomaly = 0;
 		List<Object> otherFields = Lists.newArrayList(tuple.getValues());
 		int currentCounter = (Integer) otherFields.get(0);
 		currentSentiment = (Integer) otherFields.get(1);
@@ -106,33 +112,54 @@ public class AnomalyDetectionBolt_PEWA_STDEV extends BaseRichBolt {
 
 		currentBin.setCount(currentCounter);
 		currentBin.setDate(currentDate);
-		
-		isAnomaly = algo_anomalyDetection.find_Outlier(currentBin, currentSentiment);
-		
-//		algo_anomalyDetection.update_window(currentBin);
-//		
-//		isAnomaly = algo_anomalyDetection.find_peak_window(currentBin,currentSentiment);
 
-//		int index = 0;
-//		if(currentSentiment ==  SENTIMENT_LOG){
-//			System.out
-//					.println("\n ***********Peak Windows In the List for sentiment "
-//							+ currentSentiment + "||count:"+ 
-//							algo_anomalyDetection.peak_Windows.size()+ "***********");
-//			System.out.println("Processing: time:" + currentDate + "|| count:"+ currentCounter + 
-//					"|| isAnomaly:" + isAnomaly);
-//			
-//			for (PickWindow window : algo_anomalyDetection.peak_Windows) {
-//				index++;
-//				System.out.println(index +"||"+currentDate+ "||Sentiment:"+currentSentiment +"||StartTime:" + window.getStartTime()
-//						+ "||EndTime:" + window.getEndTime()+ "||Max:"+window.getMaxValue() );
-//			
-//				System.out.println("\n");
-//			}
-//		}
-		if(isAnomaly)
-		{
-			System.out.println("Got ya");
+		// Negative ==0
+		if (currentSentiment == 0) {
+			
+			isAnomaly = negative_algo_anomalyDetection.find_Outlier(currentBin,
+					currentSentiment);
+		}
+
+		// Neutral == 2
+		if (currentSentiment == 2) {
+			isAnomaly = neutral_algo_anomalyDetection.find_Outlier(currentBin,
+					currentSentiment);
+		}
+
+		// Positive == 4
+		if (currentSentiment == 4) {
+			isAnomaly = positive_algo_anomalyDetection.find_Outlier(currentBin,
+					currentSentiment);
+		}
+
+		// algo_anomalyDetection.update_window(currentBin);
+		//
+		// isAnomaly =
+		// algo_anomalyDetection.find_peak_window(currentBin,currentSentiment);
+
+		// int index = 0;
+		// if(currentSentiment == SENTIMENT_LOG){
+		// System.out
+		// .println("\n ***********Peak Windows In the List for sentiment "
+		// + currentSentiment + "||count:"+
+		// algo_anomalyDetection.peak_Windows.size()+ "***********");
+		// System.out.println("Processing: time:" + currentDate + "|| count:"+
+		// currentCounter +
+		// "|| isAnomaly:" + isAnomaly);
+		//
+		// for (PickWindow window : algo_anomalyDetection.peak_Windows) {
+		// index++;
+		// System.out.println(index +"||"+currentDate+
+		// "||Sentiment:"+currentSentiment +"||StartTime:" +
+		// window.getStartTime()
+		// + "||EndTime:" + window.getEndTime()+ "||Max:"+window.getMaxValue()
+		// );
+		//
+		// System.out.println("\n");
+		// }
+		// }
+		if (isAnomaly > 0) {
+			// System.out.println("Got ya");
 		}
 		collector.emit(new Values(currentCounter, currentSentiment,
 				currentDate, isAnomaly));
