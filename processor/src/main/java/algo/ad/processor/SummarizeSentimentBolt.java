@@ -15,6 +15,8 @@ import backtype.storm.tuple.Values;
 
 import com.google.common.collect.Lists;
 
+import data.collection.entity.Tweet;
+
 public class SummarizeSentimentBolt extends BaseRichBolt {
 
 	private static final long serialVersionUID = 5537727428628598519L;
@@ -65,6 +67,8 @@ public class SummarizeSentimentBolt extends BaseRichBolt {
 													// sentement_Id, //
 													// 2:Date_object
 		Integer isAnomalous = (Integer) otherFields.get(3);
+		
+		//List<Tweet> tweetList =  (List<Tweet>) otherFields.get(4);
 
 //		if(isAnomalous)
 //		{

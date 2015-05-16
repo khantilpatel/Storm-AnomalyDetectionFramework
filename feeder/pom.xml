@@ -9,11 +9,14 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>feeder</artifactId>
-
+	<properties>
+		<jackson.version>2.4.4</jackson.version>
+	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>storm</groupId>
 			<artifactId>storm</artifactId>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
@@ -42,6 +45,37 @@
 			<artifactId>neo4j-cypher-compiler-2.1</artifactId>
 			<version>2.1.2</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>1.7.5</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- Needed for JSON<=>OBJECT Mapping using simple annotations -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+		<dependency>
+			<!-- Note: core-annotations version x.y.0 is generally compatible with 
+				(identical to) version x.y.1, x.y.2, etc. -->
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+		
 	</dependencies>
 
 

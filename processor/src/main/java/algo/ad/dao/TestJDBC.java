@@ -9,9 +9,10 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-import algo.ad.feeder.dao.Tweet;
-import algo.ad.feeder.dao.TweetJDBCTemplate;
-import algo.ad.feeder.utility.AggregateUtilityFunctions;
+import common.feeder.utility.AggregateUtilityFunctions;
+import common.feeder.utility.TweetJDBCTemplate;
+
+import data.collection.entity.Tweet;
 import algo.ad.utility.Algorithm_Peak_Windows;
 import algo.ad.utility.Bin;
 import algo.ad.utility.PickWindow;

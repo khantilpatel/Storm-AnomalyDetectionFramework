@@ -5,11 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import algo.ad.feeder.dao.TweetSentiment;
+import algo.ad.dao.TweetAggregateBin;
 import algo.ad.utility.Algorithm_EWMA_STDEV;
-import algo.ad.utility.Algorithm_Peak_Windows;
 import algo.ad.utility.Bin;
-import algo.ad.utility.PickWindow;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -19,6 +17,9 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
 import com.google.common.collect.Lists;
+
+import data.collection.entity.TweetSentiment;
+import data.collection.entity.TweetTransferEntity;
 
 /**
  * This bolt performs rolling counts of incoming objects, i.e. sliding window
@@ -66,15 +67,20 @@ public class AnomalyDetectionBolt_PEWA_STDEV extends BaseRichBolt {
 	Algorithm_EWMA_STDEV neutral_algo_anomalyDetection;
 	Algorithm_EWMA_STDEV negative_algo_anomalyDetection;
 
+	
+
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void prepare(Map stormConf, TopologyContext context,
 			OutputCollector collector) {
 		this.collector = collector;
-		negative_algo_anomalyDetection = new Algorithm_EWMA_STDEV(TweetSentiment.NEGATIVE, "out_negative");
-		neutral_algo_anomalyDetection = new Algorithm_EWMA_STDEV(TweetSentiment.NEUTRAL, "out_neutral");
-		positive_algo_anomalyDetection = new Algorithm_EWMA_STDEV(TweetSentiment.POSITIVE, "out_positive");
-		
+		negative_algo_anomalyDetection = new Algorithm_EWMA_STDEV(
+				TweetSentiment.NEGATIVE, "out_negative");
+		neutral_algo_anomalyDetection = new Algorithm_EWMA_STDEV(
+				TweetSentiment.NEUTRAL, "out_neutral");
+		positive_algo_anomalyDetection = new Algorithm_EWMA_STDEV(
+				TweetSentiment.POSITIVE, "out_positive");
+
 		// lastModifiedTracker = new
 		// NthLastModifiedTimeTracker(deriveNumWindowChunksFrom(this.windowLengthInSeconds,
 		// this.emitFrequencyInSeconds));
@@ -88,12 +94,11 @@ public class AnomalyDetectionBolt_PEWA_STDEV extends BaseRichBolt {
 
 	private void emit(int count, int sentiment, Date emitDate) {
 		Date date = new java.util.Date();
-		// LOG.debug("TweetAggregateBolt: Emit Aggregate, Count:"+count+
-		// "||Sentiment:"+sentiment+"||Timestamp: "+date);
+	
 		if (sentiment == SENTIMENT_LOG) {
-			System.out.println("TweetAggregateBolt: Emit Aggregate, Count:"
-					+ count + "||Sentiment:" + sentiment + "||Timestamp: "
-					+ date);
+//			System.out.println("TweetAggregateBolt: Emit Aggregate, Count:"
+//					+ count + "||Sentiment:" + sentiment + "||Timestamp: "
+//					+ date);
 		}
 		counter = 0;
 		// collector.emit(new Values(count, date));
@@ -102,20 +107,36 @@ public class AnomalyDetectionBolt_PEWA_STDEV extends BaseRichBolt {
 	private void countObjAndAck(Tuple tuple) {
 		int isAnomaly = 0;
 		List<Object> otherFields = Lists.newArrayList(tuple.getValues());
-		int currentCounter = (Integer) otherFields.get(0);
+//		int currentCounter = (Integer) otherFields.get(0);
 		currentSentiment = (Integer) otherFields.get(1);
-		Date currentDate = (Date) otherFields.get(2); // 0: counter, 1:
-														// sentement_Id,
-														// 2:Date_object
-
+//		Date currentDate = (Date) otherFields.get(2); // 0: counter, 1:
+//														// sentement_Id,
+//														// 2:Date_object
+//
+//		 Map<Long,Long> tweetMap = (Map<Long,Long>) otherFields.get(3);
+//		 
+		TweetAggregateBin bin = (TweetAggregateBin) otherFields.get(3);
+		
 		Bin currentBin = new Bin();
 
-		currentBin.setCount(currentCounter);
-		currentBin.setDate(currentDate);
-
+		currentBin.setCount(bin.getCounter());
+		currentBin.setDate(bin.getDate());
+		
+		List<TweetTransferEntity> tweetList = bin.getTweetList();
+		String str_tweet_ids = "";
+		for (TweetTransferEntity tweetTransferEntity : tweetList) {
+			str_tweet_ids += String.valueOf(tweetTransferEntity.getTimestamp());
+		}
+		
+		if (currentSentiment == SENTIMENT_LOG) {
+		 System.out.println("AnomalyDetectionBolt_PEWA_STDEV: Emit Aggregate, Count:"+bin.getCounter()+
+		 "||Sentiment:"+currentSentiment+"||Timestamp: "+ bin.getDate()+"||tweetListCount::" +bin.getTweetList().size()
+		 +"|| list::"+str_tweet_ids);
+		}
+	
 		// Negative ==0
 		if (currentSentiment == 0) {
-			
+
 			isAnomaly = negative_algo_anomalyDetection.find_Outlier(currentBin,
 					currentSentiment);
 		}
@@ -161,14 +182,14 @@ public class AnomalyDetectionBolt_PEWA_STDEV extends BaseRichBolt {
 		if (isAnomaly > 0) {
 			// System.out.println("Got ya");
 		}
-		collector.emit(new Values(currentCounter, currentSentiment,
-				currentDate, isAnomaly));
+		collector.emit(new Values(bin.getCounter(), currentSentiment,
+				bin.getDate(), isAnomaly, bin.getTweetList()));
 	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields("count", "sentiment_id", "ObjTimestamp",
-				"isAnomaly"));
+				"isAnomaly", "tweetList"));
 	}
 
 	@Override

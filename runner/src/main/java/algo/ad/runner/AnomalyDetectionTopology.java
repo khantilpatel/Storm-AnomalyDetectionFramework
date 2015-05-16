@@ -19,7 +19,8 @@
 package algo.ad.runner;
 
 
-import algo.ad.feeder.ArtificialTweetsEmitterSpout;
+import common.feeder.spouts.ArtificialTweetsEmitterSpout;
+
 import algo.ad.processor.AnomalyDetectionBolt;
 import algo.ad.processor.AnomalyDetectionBolt_PEWA_STDEV;
 import algo.ad.processor.TweetAggregateBolt;
@@ -64,7 +65,7 @@ public class AnomalyDetectionTopology {
     String counterId = "TweetAggregateBolt";
     String intermediateRankerId = "AnomalyDetectionBolt";
   //  String totalRankerId = "finalRanker";
-    builder.setSpout(spoutId, new ArtificialTweetsEmitterSpout(), 1);
+    builder.setSpout(spoutId, new ArtificialTweetsEmitterSpout(true,null), 1);
     builder.setBolt(counterId, new TweetAggregateBolt(), 3).fieldsGrouping(spoutId, new Fields("sentiment_id"));
     builder.setBolt(intermediateRankerId, new AnomalyDetectionBolt_PEWA_STDEV(), 3).fieldsGrouping(counterId, new Fields(
         "sentiment_id"));

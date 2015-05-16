@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import algo.ad.feeder.utility.AggregateUtilityFunctions;
+import common.feeder.utility.AggregateUtilityFunctions;
 
 public class Algorithm_Peak_Windows {
 	// Constants

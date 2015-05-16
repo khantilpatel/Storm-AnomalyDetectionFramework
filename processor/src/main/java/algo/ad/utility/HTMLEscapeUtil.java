@@ -4,7 +4,7 @@ package algo.ad.utility;
 
 
 /**
-* HtmlEscape in Java, which is compatible with utf-8
+* HtmlEscape in Java, which is compatible with 
 * @author Ulrich Jensen, http://www.htmlescape.net
 * Feel free to get inspired, use or steal this code and use it in your
 * own projects.
@@ -94,69 +94,69 @@ public class HTMLEscapeUtil {
        boolean found=true;
      switch(chars[i]) {
        case 38:out.append("&amp;"); break; //&
-       case 198:out.append("&AElig;"); break; //Æ
-       case 193:out.append("&Aacute;"); break; //Á
-       case 194:out.append("&Acirc;"); break; //Â
-       case 192:out.append("&Agrave;"); break; //À
-       case 197:out.append("&Aring;"); break; //Å
-       case 195:out.append("&Atilde;"); break; //Ã
-       case 196:out.append("&Auml;"); break; //Ä
-       case 199:out.append("&Ccedil;"); break; //Ç
-       case 208:out.append("&ETH;"); break; //Ð
-       case 201:out.append("&Eacute;"); break; //É
-       case 202:out.append("&Ecirc;"); break; //Ê
-       case 200:out.append("&Egrave;"); break; //È
-       case 203:out.append("&Euml;"); break; //Ë
-       case 205:out.append("&Iacute;"); break; //Í
-       case 206:out.append("&Icirc;"); break; //Î
-       case 204:out.append("&Igrave;"); break; //Ì
-       case 207:out.append("&Iuml;"); break; //Ï
-       case 209:out.append("&Ntilde;"); break; //Ñ
-       case 211:out.append("&Oacute;"); break; //Ó
-       case 212:out.append("&Ocirc;"); break; //Ô
-       case 210:out.append("&Ograve;"); break; //Ò
-       case 216:out.append("&Oslash;"); break; //Ø
-       case 213:out.append("&Otilde;"); break; //Õ
-       case 214:out.append("&Ouml;"); break; //Ö
-       case 222:out.append("&THORN;"); break; //Þ
-       case 218:out.append("&Uacute;"); break; //Ú
-       case 219:out.append("&Ucirc;"); break; //Û
-       case 217:out.append("&Ugrave;"); break; //Ù
-       case 220:out.append("&Uuml;"); break; //Ü
-       case 221:out.append("&Yacute;"); break; //Ý
-       case 225:out.append("&aacute;"); break; //á
-       case 226:out.append("&acirc;"); break; //â
-       case 230:out.append("&aelig;"); break; //æ
-       case 224:out.append("&agrave;"); break; //à
-       case 229:out.append("&aring;"); break; //å
-       case 227:out.append("&atilde;"); break; //ã
-       case 228:out.append("&auml;"); break; //ä
-       case 231:out.append("&ccedil;"); break; //ç
-       case 233:out.append("&eacute;"); break; //é
-       case 234:out.append("&ecirc;"); break; //ê
-       case 232:out.append("&egrave;"); break; //è
-       case 240:out.append("&eth;"); break; //ð
-       case 235:out.append("&euml;"); break; //ë
-       case 237:out.append("&iacute;"); break; //í
-       case 238:out.append("&icirc;"); break; //î
-       case 236:out.append("&igrave;"); break; //ì
-       case 239:out.append("&iuml;"); break; //ï
-       case 241:out.append("&ntilde;"); break; //ñ
-       case 243:out.append("&oacute;"); break; //ó
-       case 244:out.append("&ocirc;"); break; //ô
-       case 242:out.append("&ograve;"); break; //ò
-       case 248:out.append("&oslash;"); break; //ø
-       case 245:out.append("&otilde;"); break; //õ
-       case 246:out.append("&ouml;"); break; //ö
-       case 223:out.append("&szlig;"); break; //ß
-       case 254:out.append("&thorn;"); break; //þ
-       case 250:out.append("&uacute;"); break; //ú
-       case 251:out.append("&ucirc;"); break; //û
-       case 249:out.append("&ugrave;"); break; //ù
-       case 252:out.append("&uuml;"); break; //ü
-       case 253:out.append("&yacute;"); break; //ý
-       case 255:out.append("&yuml;"); break; //ÿ
-       case 162:out.append("&cent;"); break; //¢
+       case 198:out.append("&AElig;"); break; //ï¿½
+       case 193:out.append("&Aacute;"); break; //ï¿½
+       case 194:out.append("&Acirc;"); break; //ï¿½
+       case 192:out.append("&Agrave;"); break; //ï¿½
+       case 197:out.append("&Aring;"); break; //ï¿½
+       case 195:out.append("&Atilde;"); break; //ï¿½
+       case 196:out.append("&Auml;"); break; //ï¿½
+       case 199:out.append("&Ccedil;"); break; //ï¿½
+       case 208:out.append("&ETH;"); break; //ï¿½
+       case 201:out.append("&Eacute;"); break; //ï¿½
+       case 202:out.append("&Ecirc;"); break; //ï¿½
+       case 200:out.append("&Egrave;"); break; //ï¿½
+       case 203:out.append("&Euml;"); break; //ï¿½
+       case 205:out.append("&Iacute;"); break; //ï¿½
+       case 206:out.append("&Icirc;"); break; //ï¿½
+       case 204:out.append("&Igrave;"); break; //ï¿½
+       case 207:out.append("&Iuml;"); break; //ï¿½
+       case 209:out.append("&Ntilde;"); break; //ï¿½
+       case 211:out.append("&Oacute;"); break; //ï¿½
+       case 212:out.append("&Ocirc;"); break; //ï¿½
+       case 210:out.append("&Ograve;"); break; //ï¿½
+       case 216:out.append("&Oslash;"); break; //ï¿½
+       case 213:out.append("&Otilde;"); break; //ï¿½
+       case 214:out.append("&Ouml;"); break; //ï¿½
+       case 222:out.append("&THORN;"); break; //ï¿½
+       case 218:out.append("&Uacute;"); break; //ï¿½
+       case 219:out.append("&Ucirc;"); break; //ï¿½
+       case 217:out.append("&Ugrave;"); break; //ï¿½
+       case 220:out.append("&Uuml;"); break; //ï¿½
+       case 221:out.append("&Yacute;"); break; //ï¿½
+       case 225:out.append("&aacute;"); break; //ï¿½
+       case 226:out.append("&acirc;"); break; //ï¿½
+       case 230:out.append("&aelig;"); break; //ï¿½
+       case 224:out.append("&agrave;"); break; //ï¿½
+       case 229:out.append("&aring;"); break; //ï¿½
+       case 227:out.append("&atilde;"); break; //ï¿½
+       case 228:out.append("&auml;"); break; //ï¿½
+       case 231:out.append("&ccedil;"); break; //ï¿½
+       case 233:out.append("&eacute;"); break; //ï¿½
+       case 234:out.append("&ecirc;"); break; //ï¿½
+       case 232:out.append("&egrave;"); break; //ï¿½
+       case 240:out.append("&eth;"); break; //ï¿½
+       case 235:out.append("&euml;"); break; //ï¿½
+       case 237:out.append("&iacute;"); break; //ï¿½
+       case 238:out.append("&icirc;"); break; //ï¿½
+       case 236:out.append("&igrave;"); break; //ï¿½
+       case 239:out.append("&iuml;"); break; //ï¿½
+       case 241:out.append("&ntilde;"); break; //ï¿½
+       case 243:out.append("&oacute;"); break; //ï¿½
+       case 244:out.append("&ocirc;"); break; //ï¿½
+       case 242:out.append("&ograve;"); break; //ï¿½
+       case 248:out.append("&oslash;"); break; //ï¿½
+       case 245:out.append("&otilde;"); break; //ï¿½
+       case 246:out.append("&ouml;"); break; //ï¿½
+       case 223:out.append("&szlig;"); break; //ï¿½
+       case 254:out.append("&thorn;"); break; //ï¿½
+       case 250:out.append("&uacute;"); break; //ï¿½
+       case 251:out.append("&ucirc;"); break; //ï¿½
+       case 249:out.append("&ugrave;"); break; //ï¿½
+       case 252:out.append("&uuml;"); break; //ï¿½
+       case 253:out.append("&yacute;"); break; //ï¿½
+       case 255:out.append("&yuml;"); break; //ï¿½
+       case 162:out.append("&cent;"); break; //ï¿½
        default:
          found=false;
          break;

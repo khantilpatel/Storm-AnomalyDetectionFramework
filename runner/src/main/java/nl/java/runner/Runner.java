@@ -1,4 +1,4 @@
-package nl.java.runner;
+/*package nl.java.runner;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -23,10 +23,10 @@ import backtype.storm.contrib.jms.bolt.JmsBolt;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Tuple;
 
-/**
+*//**
  * @author robbreuk
  * @author Prashanth
- */
+ *//*
 public final class Runner {
 	public static final void main(final String[] args) throws Exception {
 		final ApplicationContext applicationContext = new ClassPathXmlApplicationContext("applicationContext.xml");
@@ -68,3 +68,4 @@ public final class Runner {
 		cluster.submitTopology("word-count", config, topologyBuilder.createTopology());
 	}
 }
+*/

@@ -12,8 +12,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 
-import algo.ad.feeder.dao.TweetSentiment;
-import algo.ad.feeder.utility.AggregateUtilityFunctions;
+import common.feeder.utility.AggregateUtilityFunctions;
+import data.collection.entity.TweetSentiment;
 
 public class Algorithm_EWMA_STDEV {
 

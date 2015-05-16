@@ -10,9 +10,9 @@
     <version>1.0</version>
 
     <modules>
-        <module>feeder</module>
-        <module>runner</module>
+        <module>feeder</module>   
         <module>processor</module>
+	<module>runner</module>
     </modules>
 
     <properties>
@@ -157,6 +157,5 @@
 
         </dependencies>
     </dependencyManagement>
-
 
 </project>

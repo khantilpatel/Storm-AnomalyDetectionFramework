@@ -1,4 +1,6 @@
 eclipse.preferences.version=1
 encoding//src/main/java/algo/ad/dao/Sentiment140Response.java=UTF-8
 encoding//src/main/java/algo/ad/dao/Sentiment140ResponseDAO.java=UTF-8
-encoding//src/main/java/algo/ad/processor/Sentiment140Bolt.java=UTF-8
+encoding//src/main/java/algo/ad/processor/tweets/BoltSentiment140.java=UTF-8
+encoding//src/main/java/algo/ad/processor/tweets/BoltTagTweetsWithQuery.java=UTF-8
+encoding//src/main/java/algo/ad/utility/HTMLEscapeUtil.java=UTF-8
