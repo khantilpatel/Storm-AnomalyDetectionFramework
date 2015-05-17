@@ -110,6 +110,8 @@ public class ArtificialTweetsEmitterSpout extends BaseRichSpout {
 				new CustomRowCallbackHandler(_collector, AGGREGATION_FACTOR_MINUTES, SLEEP_FACTOR_MILLI_SEC));
 		
 		tweetsJDBCTemplate = null;
+		
+		Utils.sleep(50000);
 		// /OLD
 		// METHOD////////////////////////////////////////////////////////////////////
 		/*

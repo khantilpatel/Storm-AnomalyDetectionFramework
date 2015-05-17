@@ -23,6 +23,7 @@ import org.springframework.context.ApplicationContext;
 import algo.ad.processor.AnomalyDetectionBolt_PEWA_STDEV;
 import algo.ad.processor.SummarizeSentimentBolt;
 import algo.ad.processor.TweetAggregateBolt;
+import algo.ad.processor.tweets.BoltSaveTweetToMySQL;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.contrib.jms.JmsMessageProducer;
@@ -110,6 +111,7 @@ public final class SentimentAnomalyRunner {
 		String counterId = "TweetAggregateBolt";
 		String intermediateRankerId = "AnomalyDetectionBolt";
 		String summarizeSentimentId = "summarizeSentimentBolt";
+		String BoltSaveTweetToMySQL = "BoltSaveTweetToMySQL";
 		// String totalRankerId = "finalRanker";
 		
 		ApplicationConfigurationFile configFile = read(propertiesFile);
@@ -126,6 +128,8 @@ public final class SentimentAnomalyRunner {
 				intermediateRankerId);
 		topologyBuilder.setBolt("jmsBolt", jmsBolt).shuffleGrouping(
 				summarizeSentimentId);
+		topologyBuilder.setBolt(BoltSaveTweetToMySQL, new BoltSaveTweetToMySQL(configFile, false)).shuffleGrouping(
+				intermediateRankerId);
 
 		// topologyBuilder.setSpout("wordGenerator", new RandomWordFeeder());
 		// topologyBuilder.setBolt("counter", new

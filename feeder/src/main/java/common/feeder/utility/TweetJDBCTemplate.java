@@ -13,6 +13,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
 import twitter4j.Status;
 import twitter4j.User;
+import data.collection.entity.AnomalyTableObject;
 import data.collection.entity.ITweetDAO;
 import data.collection.entity.Queries;
 import data.collection.entity.Tweet;
@@ -26,13 +27,13 @@ import data.collection.mapper.TweetCounterQueryJSONMapper;
 import data.collection.mapper.TweetMapper;
 import data.collection.mapper.UsersMapper;
 
-public class TweetJDBCTemplate implements ITweetDAO, Serializable{
-	
+public class TweetJDBCTemplate implements ITweetDAO, Serializable {
+
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 6412304006074403221L;
-	
+
 	public StreamingResultSetEnabledJdbcTemplate jdbcTemplateObject;
 
 	public void setDataSource(DataSource dataSource) {
@@ -48,10 +49,11 @@ public class TweetJDBCTemplate implements ITweetDAO, Serializable{
 	// System.out.println("Created Record Name = " + name + " Age = " + age);
 	// return;
 	// }
-	
-	//******************************************************************************************
-	//*****************LIST/GET Functions**************************************************
-	//******************************************************************************************
+
+	// ******************************************************************************************
+	// *****************LIST/GET
+	// Functions**************************************************
+	// ******************************************************************************************
 
 	public Tweet getTweet(Integer id) {
 		String SQL = "select * from tweets where id = ?";
@@ -79,38 +81,50 @@ public class TweetJDBCTemplate implements ITweetDAO, Serializable{
 
 		return queriesList;
 	}
-	
-	
 
 	public List<Users> listUsers(String SQL) {
 		List<Users> usersList = jdbcTemplateObject
 				.query(SQL, new UsersMapper());
 		return usersList;
 	}
-	
-	
+
 	public List<TweetSentimentCountEntity> listTweetCountBySentiment(String SQL) {
-		List<TweetSentimentCountEntity> usersList = jdbcTemplateObject
-				.query(SQL, new TweetCounterQueryJSONMapper());
+		List<TweetSentimentCountEntity> usersList = jdbcTemplateObject.query(
+				SQL, new TweetCounterQueryJSONMapper());
 		return usersList;
 	}
 
-
-	
 	public List<TweetAggregatedBin> listAggregatedTweets(String SQL) {
-		List<TweetAggregatedBin> tweetAggregateResult = jdbcTemplateObject.query(SQL,
-				new TweetAggregateBinMapper());
+		List<TweetAggregatedBin> tweetAggregateResult = jdbcTemplateObject
+				.query(SQL, new TweetAggregateBinMapper());
 
 		return tweetAggregateResult;
 	}
-	
-	
-	
-	//*************************END*****************************************************************
-	
-	//******************************************************************************************
-	//*****************INSERT/UPDATE Functions**************************************************
-	//******************************************************************************************
+
+	// *************************END*****************************************************************
+
+	// ******************************************************************************************
+	// *****************INSERT/UPDATE
+	// Functions**************************************************
+	// ******************************************************************************************
+
+	public void insertAnomalies(AnomalyTableObject anomaly) {
+
+		String sql = "INSERT INTO tweets "
+				+ "(query_id, sentiment_id, tweet_id, timestamp,"
+				+ " aggregation, window_length, value, note ) "
+				+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+		// jdbcTemplate = new JdbcTemplate(dataSource);
+
+		jdbcTemplateObject.update(
+				sql,
+				new Object[] { anomaly.getQuery_id(), anomaly.getSentiment(),
+						anomaly.getTweet_id(), anomaly.getTimestamp(),
+						anomaly.getAggregation(), anomaly.getWindow_length(),
+						anomaly.getValue(), anomaly.getNote() });
+	}
+
 	public void insertTweet(TweetTableObject tweet, final long query_id) {
 
 		String sql = "INSERT INTO tweets "
@@ -132,14 +146,14 @@ public class TweetJDBCTemplate implements ITweetDAO, Serializable{
 						tweet.getSentiment(), tweet.getSentiment_original(),
 						tweet.getCreated_at() });
 	}
-	
-	public void updateQueryForSparklineJSON(Queries query, String counterJson ,String json) {
+
+	public void updateQueryForSparklineJSON(Queries query, String counterJson,
+			String json) {
 
 		String sql = "UPDATE queries SET config = ?, history_data = ? WHERE query_id = ?";
 
-		jdbcTemplateObject.update(
-				sql,
-				new Object[] {counterJson, json, query.getQuery_id() });
+		jdbcTemplateObject.update(sql,
+				new Object[] { counterJson, json, query.getQuery_id() });
 	}
 
 	public void insertBulkTweet(final List<TweetTableObject> tweets) {
@@ -196,26 +210,26 @@ public class TweetJDBCTemplate implements ITweetDAO, Serializable{
 				+ "statuses_count= VALUES(statuses_count),"
 				+ "followers_count= VALUES(followers_count),"
 				+ "reputation_score = VALUES(reputation_score)";
-		
-		
+
 		jdbcTemplateObject.batchUpdate(sql, new BatchPreparedStatementSetter() {
 
 			@Override
 			public void setValues(PreparedStatement ps, int i)
 					throws SQLException {
 				TweetTableObject tweet = tweets.get(i);
-				Status status =  tweet.getStatus();
+				Status status = tweet.getStatus();
 				double reputationScore = 0;
 				User user = status.getUser();
-				
-				if(user.getFollowersCount() != 0){
-					reputationScore = (double)user.getFriendsCount()/(double)user.getFollowersCount();
+
+				if (user.getFollowersCount() != 0) {
+					reputationScore = (double) user.getFriendsCount()
+							/ (double) user.getFollowersCount();
 					DecimalFormat df = new DecimalFormat("##.#####");
-					reputationScore = Double.valueOf(df.format(reputationScore)); 
+					reputationScore = Double.valueOf(df.format(reputationScore));
 				}
-			//Log.info("reputationScore::::"+user.getFriendsCount()+"/"+user.getFollowersCount()+"="+reputationScore);
+				// Log.info("reputationScore::::"+user.getFriendsCount()+"/"+user.getFollowersCount()+"="+reputationScore);
 				ps.setLong(1, user.getId());
-				ps.setString(2, "@"+user.getScreenName());
+				ps.setString(2, "@" + user.getScreenName());
 				ps.setString(3, tweet.getUser_name());
 				ps.setString(4, user.getProfileImageURL());
 				ps.setString(5, user.getLocation());
@@ -224,11 +238,12 @@ public class TweetJDBCTemplate implements ITweetDAO, Serializable{
 				ps.setDate(8, new java.sql.Date(user.getCreatedAt().getTime()));
 				ps.setInt(9, user.getFollowersCount());
 				ps.setInt(10, user.getFriendsCount());
-				ps.setInt(11, user.getFavouritesCount() );
-				ps.setInt(12, user.getStatusesCount() );
-				ps.setString(13,user.getTimeZone());
-				ps.setDate(14, new java.sql.Date(tweet.getCreated_at().getTime()));
-				ps.setObject(15, reputationScore,java.sql.Types.DECIMAL);
+				ps.setInt(11, user.getFavouritesCount());
+				ps.setInt(12, user.getStatusesCount());
+				ps.setString(13, user.getTimeZone());
+				ps.setDate(14, new java.sql.Date(tweet.getCreated_at()
+						.getTime()));
+				ps.setObject(15, reputationScore, java.sql.Types.DECIMAL);
 				ps.setDouble(16, 0);
 			}
 
@@ -239,47 +254,53 @@ public class TweetJDBCTemplate implements ITweetDAO, Serializable{
 		});
 
 	}
+
 	public void insertBulkTweetGeoLocationFeature(List<TweetTableObject> tweets) {
 
-		final List<TweetTableObject> tweets_selected = new ArrayList<TweetTableObject>(0);
-		
+		final List<TweetTableObject> tweets_selected = new ArrayList<TweetTableObject>(
+				0);
+
 		for (TweetTableObject tweetTableObject : tweets) {
 			if (tweetTableObject.getStatus().getGeoLocation() != null) {
 				tweets_selected.add(tweetTableObject);
 			}
 		}
-			
+
 		String sql = "INSERT INTO geolocation "
 				+ "(tweet_id, latitude, longitude, exact_coordinates, user_address, user_time_zone, location)"
 				+ " VALUES (?, ?, ?, ?, ?, ?, GeomFromText(?))"
-				+"ON DUPLICATE KEY UPDATE latitude = VALUES(latitude), latitude = VALUES(longitude),"
+				+ "ON DUPLICATE KEY UPDATE latitude = VALUES(latitude), latitude = VALUES(longitude),"
 				+ "location = VALUES(location)";
-		
-			jdbcTemplateObject.batchUpdate(sql, new BatchPreparedStatementSetter() {
 
-				@Override
-				public void setValues(PreparedStatement ps, int i)
-						throws SQLException {
-					TweetTableObject tweet = tweets_selected.get(i);
-					ps.setString(1, tweet.getTweet_id());
-					ps.setDouble(2, tweet.getStatus().getGeoLocation().getLatitude());
-					ps.setDouble(3, tweet.getStatus().getGeoLocation().getLongitude());
-					ps.setInt(4, 1);
-					ps.setString(5, tweet.getStatus().getUser().getLocation());
-					ps.setString(6, tweet.getStatus().getUser().getTimeZone());
-					ps.setString(7, "POINT(" + tweet.getStatus().getGeoLocation().getLatitude() +
-							" " + tweet.getStatus().getGeoLocation().getLongitude() + ")" );
-				}
+		jdbcTemplateObject.batchUpdate(sql, new BatchPreparedStatementSetter() {
 
-				@Override
-				public int getBatchSize() {
-					return tweets_selected.size();
-				}
-			});
+			@Override
+			public void setValues(PreparedStatement ps, int i)
+					throws SQLException {
+				TweetTableObject tweet = tweets_selected.get(i);
+				ps.setString(1, tweet.getTweet_id());
+				ps.setDouble(2, tweet.getStatus().getGeoLocation()
+						.getLatitude());
+				ps.setDouble(3, tweet.getStatus().getGeoLocation()
+						.getLongitude());
+				ps.setInt(4, 1);
+				ps.setString(5, tweet.getStatus().getUser().getLocation());
+				ps.setString(6, tweet.getStatus().getUser().getTimeZone());
+				ps.setString(7, "POINT("
+						+ tweet.getStatus().getGeoLocation().getLatitude()
+						+ " "
+						+ tweet.getStatus().getGeoLocation().getLongitude()
+						+ ")");
+			}
 
-		
+			@Override
+			public int getBatchSize() {
+				return tweets_selected.size();
+			}
+		});
+
 	}
-	
+
 	public void insertTweetGeoLocationFeature(TweetTableObject tweet) {
 
 		if (tweet.getStatus().getGeoLocation() != null) {
@@ -302,49 +323,56 @@ public class TweetJDBCTemplate implements ITweetDAO, Serializable{
 
 		}
 	}
-	
+
 	public void insertBulkRetweetFeature(List<TweetTableObject> tweets) {
 
-		final List<TweetTableObject> tweets_selected = new ArrayList<TweetTableObject>(0);
-		
+		final List<TweetTableObject> tweets_selected = new ArrayList<TweetTableObject>(
+				0);
+
 		for (TweetTableObject tweetTableObject : tweets) {
 			if (tweetTableObject.isRetweet()) {
 				tweets_selected.add(tweetTableObject);
 			}
 		}
-		
-//		id int(11) NOT NULLauto inc id for this table
-//		tweet_id varchar(22) NOT NULLJust a tweet id
-//		is_retweet tinyint(1) NOT NULLflag to to know if this tweet is retweet or not
-//		retweets_count int(11) NULLif retweet then get this value from retweeted_status object
-//		old_tweet_id  varchar(22) NULLnull if not retweet else orignial tweet_id
-		
-		
+
+		// id int(11) NOT NULLauto inc id for this table
+		// tweet_id varchar(22) NOT NULLJust a tweet id
+		// is_retweet tinyint(1) NOT NULLflag to to know if this tweet is
+		// retweet or not
+		// retweets_count int(11) NULLif retweet then get this value from
+		// retweeted_status object
+		// old_tweet_id varchar(22) NULLnull if not retweet else orignial
+		// tweet_id
+
 		String sql = "INSERT INTO retweets "
 				+ "(tweet_id, is_retweet, retweets_count, old_tweet_id)"
 				+ " VALUES (?, ?, ?, ?)";
-		
-			jdbcTemplateObject.batchUpdate(sql, new BatchPreparedStatementSetter() {
 
-				@Override
-				public void setValues(PreparedStatement ps, int i)
-						throws SQLException {
-					TweetTableObject tweet = tweets_selected.get(i);
-					ps.setString(1, tweet.getTweet_id());
-					ps.setInt(2, 1);
-					ps.setLong(3, tweet.getStatus().getRetweetedStatus().getRetweetCount());
-					ps.setString(4, String.valueOf(tweet.getStatus().getRetweetedStatus().getId()));
-					
-				}
+		jdbcTemplateObject.batchUpdate(sql, new BatchPreparedStatementSetter() {
 
-				@Override
-				public int getBatchSize() {
-					return tweets_selected.size();
-				}
-			});
+			@Override
+			public void setValues(PreparedStatement ps, int i)
+					throws SQLException {
+				TweetTableObject tweet = tweets_selected.get(i);
+				ps.setString(1, tweet.getTweet_id());
+				ps.setInt(2, 1);
+				ps.setLong(3, tweet.getStatus().getRetweetedStatus()
+						.getRetweetCount());
+				ps.setString(
+						4,
+						String.valueOf(tweet.getStatus().getRetweetedStatus()
+								.getId()));
+
+			}
+
+			@Override
+			public int getBatchSize() {
+				return tweets_selected.size();
+			}
+		});
 	}
-	
-	//******************************************************************************************
+
+	// ******************************************************************************************
 	// public void delete(Integer id){
 	// String SQL = "delete from tweets where id = ?";
 	// jdbcTemplateObject.update(SQL, id);
