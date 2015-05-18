@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 
 import algo.ad.processor.AnomalyDetectionBolt_PEWA_STDEV;
+import algo.ad.processor.BoltSaveAnomaliesToMySQL;
 import algo.ad.processor.SummarizeSentimentBolt;
 import algo.ad.processor.TweetAggregateBolt;
 import algo.ad.processor.tweets.BoltSaveTweetToMySQL;
@@ -43,15 +44,17 @@ import common.feeder.utility.ConfigKeys;
  * 
  * @author Khantil Patel
  *
- * ArtificialTweetsEmitterSpout >> TweetAggregateBolt >> AnomalyDetectionBolt_PEWA_STDEV >> SummarizeSentimentBolt
+ *         ArtificialTweetsEmitterSpout >> TweetAggregateBolt >>
+ *         AnomalyDetectionBolt_PEWA_STDEV >> SummarizeSentimentBolt
  */
 
 public final class SentimentAnomalyRunner {
 
 	public final static int SENTIMENT_LOG = 2;
 	private static String propertiesFile = "jdbc.properties";
-	public static Logger LOG = LoggerFactory.getLogger(SentimentAnomalyRunner.class);
-	
+	public static Logger LOG = LoggerFactory
+			.getLogger(SentimentAnomalyRunner.class);
+
 	public static final void main(final String[] args) throws Exception {
 
 		final ApplicationContext applicationContext = new ClassPathXmlApplicationContext(
@@ -61,8 +64,7 @@ public final class SentimentAnomalyRunner {
 				applicationContext, "jmsConnectionFactory", "notificationQueue");
 
 		final TopologyBuilder topologyBuilder = new TopologyBuilder();
-		
-		
+
 		final JmsBolt jmsBolt = new JmsBolt();
 		jmsBolt.setJmsProvider(jmsQueueProvider);
 		jmsBolt.setJmsMessageProducer(new JmsMessageProducer() {
@@ -111,25 +113,26 @@ public final class SentimentAnomalyRunner {
 		String counterId = "TweetAggregateBolt";
 		String intermediateRankerId = "AnomalyDetectionBolt";
 		String summarizeSentimentId = "summarizeSentimentBolt";
-		String BoltSaveTweetToMySQL = "BoltSaveTweetToMySQL";
+		String BoltSaveAnomaliesToMySQL = "BoltSaveAnomaliesToMySQL";
 		// String totalRankerId = "finalRanker";
-		
+
 		ApplicationConfigurationFile configFile = read(propertiesFile);
-		
-		topologyBuilder
-				.setSpout(spoutId, new ArtificialTweetsEmitterSpout(true, configFile), 1);
+
+		topologyBuilder.setSpout(spoutId, new ArtificialTweetsEmitterSpout(
+				true, configFile), 1);
 		topologyBuilder.setBolt(counterId, new TweetAggregateBolt(), 3)
 				.fieldsGrouping(spoutId, new Fields("sentiment_id"));
 		topologyBuilder.setBolt(intermediateRankerId,
 				new AnomalyDetectionBolt_PEWA_STDEV(), 3).fieldsGrouping(
 				counterId, new Fields("sentiment_id"));
+		topologyBuilder.setBolt(BoltSaveAnomaliesToMySQL,
+				new BoltSaveAnomaliesToMySQL(configFile, true))
+				.shuffleGrouping(intermediateRankerId);
 		topologyBuilder.setBolt(summarizeSentimentId,
 				new SummarizeSentimentBolt()).shuffleGrouping(
 				intermediateRankerId);
 		topologyBuilder.setBolt("jmsBolt", jmsBolt).shuffleGrouping(
 				summarizeSentimentId);
-		topologyBuilder.setBolt(BoltSaveTweetToMySQL, new BoltSaveTweetToMySQL(configFile, false)).shuffleGrouping(
-				intermediateRankerId);
 
 		// topologyBuilder.setSpout("wordGenerator", new RandomWordFeeder());
 		// topologyBuilder.setBolt("counter", new
@@ -144,7 +147,7 @@ public final class SentimentAnomalyRunner {
 		cluster.submitTopology("word-count", config,
 				topologyBuilder.createTopology());
 	}
-	
+
 	private static ApplicationConfigurationFile read(String propertiesFile) {
 		ApplicationConfigurationFile configFile = new ApplicationConfigurationFile();
 		try {

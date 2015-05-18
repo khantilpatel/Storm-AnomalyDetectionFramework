@@ -75,7 +75,7 @@ public class BoltSaveAnomaliesToMySQL extends BaseBasicBolt {
 		List<TweetTransferEntity> tweetList = (List<TweetTransferEntity>) otherFields
 				.get(4);
 
-		int aggregation_factor = 15;
+		int aggregation_factor = 123;
 
 		TweetJDBCTemplate tweetJdbcTemplate = TweetJDBCTemplateConnectionPool
 				.getTweetJDBCTemplate("test", configFile);
@@ -109,7 +109,6 @@ public class BoltSaveAnomaliesToMySQL extends BaseBasicBolt {
 			anomaly.setWindow_length(0);
 			anomaly.setAggregation(aggregation_factor);
 			anomaly.setNote(tempDate.toString());
-
 			tweetJdbcTemplate.insertAnomalies(anomaly);
 		}
 

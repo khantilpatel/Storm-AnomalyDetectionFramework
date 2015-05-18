@@ -110,10 +110,10 @@ public class TweetJDBCTemplate implements ITweetDAO, Serializable {
 
 	public void insertAnomalies(AnomalyTableObject anomaly) {
 
-		String sql = "INSERT INTO tweets "
+		String sql = "INSERT INTO anomalies "
 				+ "(query_id, sentiment_id, tweet_id, timestamp,"
 				+ " aggregation, window_length, value, note ) "
-				+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+				+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
 		// jdbcTemplate = new JdbcTemplate(dataSource);
 

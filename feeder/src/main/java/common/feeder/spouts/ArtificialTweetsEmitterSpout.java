@@ -105,11 +105,11 @@ public class ArtificialTweetsEmitterSpout extends BaseRichSpout {
 		
 		TweetJDBCTemplateConnectionPool
 		.getTweetJDBCTemplate("test",configFile).jdbcTemplateObject.query("select * from tweets where query_id"
-				+ " = 2 AND UNIX_TIMESTAMP < 1401617919 ORDER BY UNIX_TIMESTAMP ASC LIMIT 10000",
+				+ " = 2 ORDER BY UNIX_TIMESTAMP ASC",
 				
 				new CustomRowCallbackHandler(_collector, AGGREGATION_FACTOR_MINUTES, SLEEP_FACTOR_MILLI_SEC));
 		
-		tweetsJDBCTemplate = null;
+		configFile = null;
 		
 		Utils.sleep(50000);
 		// /OLD
