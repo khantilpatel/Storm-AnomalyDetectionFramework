@@ -83,33 +83,33 @@ public class BoltSaveAnomaliesToMySQL extends BaseBasicBolt {
 		List<AnomalyTableObject> anomalies = new ArrayList<AnomalyTableObject>(
 				0);
 
-		AnomalyTableObject anomaly = new AnomalyTableObject();
-		// for (TweetTransferEntity tweetTransferEntity : tweetList) {
-		//
-		// anomaly.setQuery_id(2);
-		// anomaly.setSentiment(currentSentiment);
-		// anomaly.setTimestamp(tweetTransferEntity.getTimestamp() / 10000);
-		//
-		// anomaly.setTweet_id(tweetTransferEntity.getTimestamp());
-		// anomaly.setValue(currentCounter);
-		// anomaly.setWindow_length(0);
-		// anomaly.setAggregation(aggregation_factor);
-		// anomaly.setNote(tweettrans);
-		//
-		// anomalies.add(anomaly);
-		// }
-
 		if (isAnomalous == 1 || isAnomalous == 2) {
-			anomaly.setQuery_id(2);
-			anomaly.setSentiment(currentSentiment);
-			anomaly.setTimestamp(tempDate.getTime() / 10000);
 
-			anomaly.setTweet_id(tempDate.getTime());
-			anomaly.setValue(currentCounter);
-			anomaly.setWindow_length(0);
-			anomaly.setAggregation(aggregation_factor);
-			anomaly.setNote(tempDate.toString());
-			tweetJdbcTemplate.insertAnomalies(anomaly);
+			for (TweetTransferEntity tweetTransferEntity : tweetList) {
+				AnomalyTableObject anomaly = new AnomalyTableObject();
+				anomaly.setQuery_id(2);
+				anomaly.setSentiment(currentSentiment);
+				anomaly.setTimestamp(tweetTransferEntity.getTimestamp() );
+
+				anomaly.setTweet_id(tweetTransferEntity.getTimestamp());
+				anomaly.setValue(currentCounter);
+				anomaly.setWindow_length(0);
+				anomaly.setAggregation(aggregation_factor);
+				anomaly.setNote(tempDate.toString());
+
+				anomalies.add(anomaly);
+			}
+
+			// anomaly.setQuery_id(2);
+			// anomaly.setSentiment(currentSentiment);
+			// anomaly.setTimestamp(tempDate.getTime() / 10000);
+			//
+			// anomaly.setTweet_id(tempDate.getTime());
+			// anomaly.setValue(currentCounter);
+			// anomaly.setWindow_length(0);
+			// anomaly.setAggregation(aggregation_factor);
+			// anomaly.setNote(tempDate.toString());
+			tweetJdbcTemplate.insertAnomalies(anomalies);
 		}
 
 	}

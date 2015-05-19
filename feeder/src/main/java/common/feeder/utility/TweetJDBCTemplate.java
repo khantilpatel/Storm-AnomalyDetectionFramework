@@ -108,7 +108,7 @@ public class TweetJDBCTemplate implements ITweetDAO, Serializable {
 	// Functions**************************************************
 	// ******************************************************************************************
 
-	public void insertAnomalies(AnomalyTableObject anomaly) {
+	public void insertAnomalies(final List<AnomalyTableObject> anomalies) {
 
 		String sql = "INSERT INTO anomalies "
 				+ "(query_id, sentiment_id, tweet_id, timestamp,"
@@ -117,14 +117,39 @@ public class TweetJDBCTemplate implements ITweetDAO, Serializable {
 
 		// jdbcTemplate = new JdbcTemplate(dataSource);
 
-		jdbcTemplateObject.update(
-				sql,
-				new Object[] { anomaly.getQuery_id(), anomaly.getSentiment(),
-						anomaly.getTweet_id(), anomaly.getTimestamp(),
-						anomaly.getAggregation(), anomaly.getWindow_length(),
-						anomaly.getValue(), anomaly.getNote() });
+		jdbcTemplateObject.batchUpdate(sql, new BatchPreparedStatementSetter() {
+			@Override
+			public void setValues(PreparedStatement ps, int i)
+					throws SQLException {
+				AnomalyTableObject anomaly = anomalies.get(i);
+				ps.setLong(1, anomaly.getQuery_id());
+				ps.setInt(2, anomaly.getSentiment());
+				ps.setLong(3, anomaly.getTweet_id());
+				ps.setLong(4, anomaly.getTimestamp());
+				ps.setLong(5, anomaly.getAggregation());
+				ps.setLong(6, anomaly.getWindow_length());
+				ps.setInt(7, anomaly.getValue());
+				ps.setString(8, anomaly.getNote());
+				
+			}
+
+			@Override
+			public int getBatchSize() {
+				return anomalies.size();
+			}
+		});
+		
+		
+//		jdbcTemplateObject.update(
+//				sql,
+//				new Object[] { anomaly.getQuery_id(), anomaly.getSentiment(),
+//						anomaly.getTweet_id(), anomaly.getTimestamp(),
+//						anomaly.getAggregation(), anomaly.getWindow_length(),
+//						anomaly.getValue(), anomaly.getNote() });
 	}
 
+	
+	
 	public void insertTweet(TweetTableObject tweet, final long query_id) {
 
 		String sql = "INSERT INTO tweets "
