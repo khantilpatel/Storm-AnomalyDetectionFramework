@@ -93,7 +93,9 @@ public class TwitterTopology {
 //				.shuffleGrouping(boltId_Sentiment140Bolt);
 		builder.setBolt(
 				boltId_BoltAnomalyDetectionAggregateTweets,
-		new BoltAnomalyDetectionAggregateTweets(configFile, isDebug), 1);
+		new BoltAnomalyDetectionAggregateTweets(configFile, isDebug), 1).
+		shuffleGrouping(boltId_Sentiment140Bolt); 
+		
 		//.shuffleGrouping(boltId_Sentiment140Bolt);
 		// String totalRankerId = "finalRanker";
 		// builder.setSpout(spoutId, new ArtificialTweetsEmitterSpout(), 1);

@@ -17,6 +17,7 @@ import backtype.storm.tuple.Tuple;
 
 import com.google.common.collect.Lists;
 
+import common.feeder.utility.AggregateUtilityFunctions;
 import common.feeder.utility.ApplicationConfigurationFile;
 import common.feeder.utility.TweetJDBCTemplate;
 import common.feeder.utility.TweetJDBCTemplateConnectionPool;
@@ -54,7 +55,7 @@ public class BoltSaveAnomaliesToMySQL extends BaseBasicBolt {
 
 		isDebug = _isDebug;
 		listOfTweets = new ArrayList<TweetTableObject>(0);
-		startTime = System.currentTimeMillis();
+
 	}
 
 	/**
@@ -63,7 +64,7 @@ public class BoltSaveAnomaliesToMySQL extends BaseBasicBolt {
 
 	@Override
 	public void execute(Tuple tuple, BasicOutputCollector collector) {
-
+		startTime = System.currentTimeMillis();
 		List<Object> otherFields = Lists.newArrayList(tuple.getValues());
 		int currentCounter = (Integer) otherFields.get(0);
 		int currentSentiment = (Integer) otherFields.get(1);
@@ -85,32 +86,45 @@ public class BoltSaveAnomaliesToMySQL extends BaseBasicBolt {
 
 		if (isAnomalous == 1 || isAnomalous == 2) {
 
-			for (TweetTransferEntity tweetTransferEntity : tweetList) {
-				AnomalyTableObject anomaly = new AnomalyTableObject();
-				anomaly.setQuery_id(2);
-				anomaly.setSentiment(currentSentiment);
-				anomaly.setTimestamp(tweetTransferEntity.getTimestamp() );
-
-				anomaly.setTweet_id(tweetTransferEntity.getTimestamp());
-				anomaly.setValue(currentCounter);
-				anomaly.setWindow_length(0);
-				anomaly.setAggregation(aggregation_factor);
-				anomaly.setNote(tempDate.toString());
-
-				anomalies.add(anomaly);
-			}
-
+			// for (TweetTransferEntity tweetTransferEntity : tweetList) {
+			// AnomalyTableObject anomaly = new AnomalyTableObject();
 			// anomaly.setQuery_id(2);
 			// anomaly.setSentiment(currentSentiment);
-			// anomaly.setTimestamp(tempDate.getTime() / 10000);
+			// anomaly.setTimestamp(tweetTransferEntity.getTimestamp() );
 			//
-			// anomaly.setTweet_id(tempDate.getTime());
+			// anomaly.setTweet_id(tweetTransferEntity.getTimestamp());
 			// anomaly.setValue(currentCounter);
 			// anomaly.setWindow_length(0);
 			// anomaly.setAggregation(aggregation_factor);
 			// anomaly.setNote(tempDate.toString());
-			tweetJdbcTemplate.insertAnomalies(anomalies);
+			//
+			// anomalies.add(anomaly);
+			// }
+			// tweetJdbcTemplate.insertAnomalies(anomalies);
+
+			long current_timestamp = tempDate.getTime() / 1000;
+			long previousAggregated_timestamp = AggregateUtilityFunctions
+					.minusMinutesToDate(15, tempDate).getTime() / 1000;
+			AnomalyTableObject anomaly = new AnomalyTableObject();
+			anomaly.setQuery_id(2);
+			anomaly.setSentiment(currentSentiment);
+			anomaly.setTimestamp(tempDate.getTime() / 1000);
+
+			anomaly.setTweet_id(current_timestamp);
+			anomaly.setValue(currentCounter);
+			anomaly.setWindow_length(0);
+			anomaly.setAggregation(aggregation_factor);
+			anomaly.setNote(tempDate.toString());
+
+			tweetJdbcTemplate.insertAnomaly_test(anomaly,
+					previousAggregated_timestamp, current_timestamp);
+
 		}
+
+		long elapsedTime = System.currentTimeMillis() - startTime;
+
+		LOG.info("Time to process is::" + elapsedTime / 1000 + " for size:: "
+				+ tweetList.size());
 
 	}
 

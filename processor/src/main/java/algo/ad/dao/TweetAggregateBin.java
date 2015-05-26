@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import data.collection.entity.TweetTableObject;
 import data.collection.entity.TweetTransferEntity;
 
 public class TweetAggregateBin implements Serializable{

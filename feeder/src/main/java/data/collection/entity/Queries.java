@@ -2,6 +2,7 @@ package data.collection.entity;
 
 import java.io.Serializable;
 
+import data.collection.json.JsonAnomalyConfig;
 import data.collection.json.JsonQueryConfig;
 
 
@@ -20,6 +21,13 @@ public class Queries implements Serializable {
 	int query_status;
 	String db_name;
 	JsonQueryConfig jsonQueryConfig;
+	
+	JsonAnomalyConfig jsonAnomalyConfig;
+	//{"window_period": {"value": 1,"type": "month"},
+	//"aggregation":{"value":3,"type":"hours"},
+	//"window_threshold": 3,
+	// "local_threshold": 3}
+	
 	
 	public long getQuery_id() {
 		return query_id;
@@ -50,6 +58,12 @@ public class Queries implements Serializable {
 	}
 	public void setJsonQueryConfig(JsonQueryConfig jsonQueryConfig) {
 		this.jsonQueryConfig = jsonQueryConfig;
+	}
+	public JsonAnomalyConfig getJsonAnomalyConfig() {
+		return jsonAnomalyConfig;
+	}
+	public void setJsonAnomalyConfig(JsonAnomalyConfig jsonAnomalyConfig) {
+		this.jsonAnomalyConfig = jsonAnomalyConfig;
 	}
 	
 	

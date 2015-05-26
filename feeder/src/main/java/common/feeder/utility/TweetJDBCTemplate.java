@@ -149,6 +149,24 @@ public class TweetJDBCTemplate implements ITweetDAO, Serializable {
 	}
 
 	
+	public void insertAnomaly_test(AnomalyTableObject anomaly, long start_timestamp, long end_timestamp) {
+
+		String sql = "INSERT INTO anomalies_test "
+				+ "(query_id, sentiment_id, tweet_id, timestamp,"
+				+ " aggregation, window_length, value, note, start_timestamp, end_timestamp ) "
+				+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+		// jdbcTemplate = new JdbcTemplate(dataSource);
+		
+		jdbcTemplateObject.update(
+				sql,
+				new Object[] { anomaly.getQuery_id(), anomaly.getSentiment(),
+						anomaly.getTweet_id(), anomaly.getTimestamp(),
+						anomaly.getAggregation(), anomaly.getWindow_length(),
+						anomaly.getValue(), anomaly.getNote(),
+						start_timestamp, end_timestamp});
+	}
+	
 	
 	public void insertTweet(TweetTableObject tweet, final long query_id) {
 

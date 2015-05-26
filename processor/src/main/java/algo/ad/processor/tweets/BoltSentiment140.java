@@ -102,7 +102,7 @@ public class BoltSentiment140 extends BaseBasicBolt {
 					.get(0);
 			tweetList.add(tweetObject);
 			totalProcessedTweets++;
-			
+			LOG.info("Printing DateTime:: "+ tweetObject.getCreated_at());
 			// System.out.println(tweetObject.getJsonObject());
 		}
 
