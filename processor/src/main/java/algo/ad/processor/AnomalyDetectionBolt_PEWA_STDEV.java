@@ -105,6 +105,8 @@ public class AnomalyDetectionBolt_PEWA_STDEV extends BaseRichBolt {
 	}
 
 	private void countObjAndAck(Tuple tuple) {
+		
+		long startTime = System.currentTimeMillis();
 		int isAnomaly = 0;
 		List<Object> otherFields = Lists.newArrayList(tuple.getValues());
 //		int currentCounter = (Integer) otherFields.get(0);
@@ -128,11 +130,7 @@ public class AnomalyDetectionBolt_PEWA_STDEV extends BaseRichBolt {
 			str_tweet_ids += String.valueOf(tweetTransferEntity.getTimestamp());
 		}
 		
-		if (currentSentiment == SENTIMENT_LOG) {
-		 System.out.println("AnomalyDetectionBolt_PEWA_STDEV: Emit Aggregate, Count:"+bin.getCounter()+
-		 "||Sentiment:"+currentSentiment+"||Timestamp: "+ bin.getDate()+"||tweetListCount::" +bin.getTweetList().size()
-		 +"|| list::"+str_tweet_ids);
-		}
+	
 	
 		// Negative ==0
 		if (currentSentiment == 0) {
@@ -182,6 +180,13 @@ public class AnomalyDetectionBolt_PEWA_STDEV extends BaseRichBolt {
 		if (isAnomaly > 0) {
 			// System.out.println("Got ya");
 		}
+		long elapsedTime = System.currentTimeMillis() - startTime;
+		
+		if (currentSentiment == SENTIMENT_LOG) {
+			 System.out.println("AnomalyDetectionBolt_PEWA_STDEV: execution Time::"+elapsedTime/1000 +" sec || Emit Aggregate, Count:"+bin.getCounter()+
+			 "||Sentiment:"+currentSentiment+"||Timestamp: "+ bin.getDate()+"||tweetListCount::" +bin.getTweetList().size()
+			 +"|| list::"+str_tweet_ids);
+			}
 		collector.emit(new Values(bin.getCounter(), currentSentiment,
 				bin.getDate(), isAnomaly, bin.getTweetList()));
 	}

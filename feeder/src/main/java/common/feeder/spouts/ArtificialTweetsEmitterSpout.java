@@ -26,15 +26,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.RowCallbackHandler;
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-import common.feeder.utility.AggregateUtilityFunctions;
-import common.feeder.utility.ApplicationConfigurationFile;
-import common.feeder.utility.TweetJDBCTemplate;
-import common.feeder.utility.TweetJDBCTemplateConnectionPool;
+import com.esotericsoftware.minlog.Log;
+
 import backtype.storm.Config;
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -43,6 +43,10 @@ import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
 import backtype.storm.utils.Utils;
+import common.feeder.utility.AggregateUtilityFunctions;
+import common.feeder.utility.ApplicationConfigurationFile;
+import common.feeder.utility.TweetJDBCTemplate;
+import common.feeder.utility.TweetJDBCTemplateConnectionPool;
 import data.collection.entity.Tweet;
 import data.collection.mapper.TweetMapper;
 
@@ -54,7 +58,7 @@ public class ArtificialTweetsEmitterSpout extends BaseRichSpout {
 	//********Constants**************
 	final static int SENTIMENT_LOG = 2;
 	private static final int AGGREGATION_FACTOR_MINUTES = 15;//360; //15
-	final long SLEEP_FACTOR_MILLI_SEC = (long) 0.5; // 1 sec = 1000 msec
+	final long SLEEP_FACTOR_MILLI_SEC = (long)0.5 ; // 1 sec = 1000 msec
 	//*******************************
 	
 	
@@ -68,7 +72,9 @@ public class ArtificialTweetsEmitterSpout extends BaseRichSpout {
 	List<Tweet> tweets;
 	ApplicationConfigurationFile configFile;
 
-
+	public static Logger LOG = LoggerFactory
+			.getLogger(ArtificialTweetsEmitterSpout.class);
+	
 	public ArtificialTweetsEmitterSpout(boolean isDistributed, 	ApplicationConfigurationFile _configFile) {
 		_isDistributed = isDistributed;
 
@@ -107,72 +113,11 @@ public class ArtificialTweetsEmitterSpout extends BaseRichSpout {
 		.getTweetJDBCTemplate("test",configFile).jdbcTemplateObject.query("select * from tweets where query_id"
 				+ " = 2 ORDER BY UNIX_TIMESTAMP ASC",
 				
-				new CustomRowCallbackHandler(_collector, AGGREGATION_FACTOR_MINUTES, SLEEP_FACTOR_MILLI_SEC));
+				new CustomRowCallbackHandler(_collector, AGGREGATION_FACTOR_MINUTES, SLEEP_FACTOR_MILLI_SEC, LOG));
 		
 		configFile = null;
 		
-		Utils.sleep(50000);
-		// /OLD
-		// METHOD////////////////////////////////////////////////////////////////////
-		/*
-		 * Utils.sleep(20); if (!tweets.isEmpty()) { Tweet tweet =
-		 * tweets.remove(0); _collector.emit(new
-		 * Values(tweet.getTweet_id(),tweet
-		 * .getSentiment().getSentimentCode(),tweet.getCreated_at())); }
-		 */
-		// ////////////////////////////////////////////////////////////////////////////////
-
-		// /////////////////////////////////////////////////////////////////////////////////////
-		// NEW METHOD WHICH EMITS TUPLES BASED ON AGGREGATION FACTOR
-		// If the aggregation is 6 hours, and sleep is 1 sec then it will emit
-		// one data point
-		// every sec and the data point will have the aggregated tweets for 6
-		// hours.
-		// ////////////////////////////////////////////////////////////////////////////////////
-
-		
-//		 new RowCallbackHandler()
-//	        {
-//				int count =0;
-//	            public void processRow(ResultSet resultSet) throws SQLException
-//	            {
-//	                final long i = count++;
-//	                if (i % 500000 == 0) System.out.println("Iterated " + i + " rows");
-//	            }
-//	        });
-		
-		
-		// Variables
-//		Tweet tweet = tweets.remove(0);
-//		Date currentDate = tweet.getCreated_at();
-//		Date nextAggregatedDate = AggregateUtilityFunctions.addMinutesToDate(
-//				AGGREGATION_FACTOR_MINUTES, currentDate);
-//
-//		while (!tweets.isEmpty()) {
-//			// While loop to emit the tuples with the aggregation condition
-//			while (currentDate.compareTo(nextAggregatedDate) <= 0) {
-//				_collector.emit(new Values(tweet.getTweet_id(), tweet
-//						.getSentiment().getSentimentCode(), tweet
-//						.getCreated_at(), nextAggregatedDate, 1));
-//				tweet = tweets.remove(0);
-//				currentDate = tweet.getCreated_at();
-//			}
-//
-//			_collector.emit(new Values(tweet.getTweet_id(), 0, tweet
-//					.getCreated_at(), nextAggregatedDate, 0));
-//
-//			_collector.emit(new Values(tweet.getTweet_id(), 2, tweet
-//					.getCreated_at(), nextAggregatedDate, 0));
-//
-//			_collector.emit(new Values(tweet.getTweet_id(), 4, tweet
-//					.getCreated_at(), nextAggregatedDate, 0));
-//
-//			System.out.println("||Aggregate Date::" + nextAggregatedDate);
-//			nextAggregatedDate = AggregateUtilityFunctions.addMinutesToDate(
-//					AGGREGATION_FACTOR_MINUTES, nextAggregatedDate);
-//			Utils.sleep(SLEEP_FACTOR_MILLI_SEC);
-//		}
-		// /////////////////////////////////////////////////////////////////////////////////
+		Utils.sleep(500);
 
 	}
 
@@ -208,18 +153,22 @@ class CustomRowCallbackHandler implements RowCallbackHandler {
 
 	private StringBuilder sb = new StringBuilder();
 
+	int count;
+	
 	SpoutOutputCollector _collector;
 	int AGGREGATION_FACTOR_MINUTES;
 	long SLEEP_FACTOR_MILLI_SEC;
 	TweetMapper mapper = new TweetMapper();
 	Date nextAggregatedDate;
-
+	Logger LOG;
 	public CustomRowCallbackHandler(SpoutOutputCollector _collector,
-			int AGGREGATION_FACTOR_MINUTES, long SLEEP_FACTOR_MILLI_SEC) {
+			int AGGREGATION_FACTOR_MINUTES, long SLEEP_FACTOR_MILLI_SEC, Logger _LOG) {
 		super();
 		this._collector = _collector;
 		this.AGGREGATION_FACTOR_MINUTES = AGGREGATION_FACTOR_MINUTES;
 		this.SLEEP_FACTOR_MILLI_SEC = SLEEP_FACTOR_MILLI_SEC;
+		
+		LOG = _LOG;
 	}
 
 	@Override
@@ -276,8 +225,72 @@ class CustomRowCallbackHandler implements RowCallbackHandler {
 						.getSentiment().getSentimentCode(), tweet.getCreated_at(),
 						nextAggregatedDate, 1));
 		}
-		
+		count++;
+		LOG.info("Current cout is:: "+count + " / 449077");
 		Utils.sleep(SLEEP_FACTOR_MILLI_SEC);
 	}
 
 }
+
+
+// /OLD
+// METHOD////////////////////////////////////////////////////////////////////
+/*
+ * Utils.sleep(20); if (!tweets.isEmpty()) { Tweet tweet =
+ * tweets.remove(0); _collector.emit(new
+ * Values(tweet.getTweet_id(),tweet
+ * .getSentiment().getSentimentCode(),tweet.getCreated_at())); }
+ */
+// ////////////////////////////////////////////////////////////////////////////////
+
+// /////////////////////////////////////////////////////////////////////////////////////
+// NEW METHOD WHICH EMITS TUPLES BASED ON AGGREGATION FACTOR
+// If the aggregation is 6 hours, and sleep is 1 sec then it will emit
+// one data point
+// every sec and the data point will have the aggregated tweets for 6
+// hours.
+// ////////////////////////////////////////////////////////////////////////////////////
+
+
+// new RowCallbackHandler()
+//    {
+//		int count =0;
+//        public void processRow(ResultSet resultSet) throws SQLException
+//        {
+//            final long i = count++;
+//            if (i % 500000 == 0) System.out.println("Iterated " + i + " rows");
+//        }
+//    });
+
+
+// Variables
+//Tweet tweet = tweets.remove(0);
+//Date currentDate = tweet.getCreated_at();
+//Date nextAggregatedDate = AggregateUtilityFunctions.addMinutesToDate(
+//		AGGREGATION_FACTOR_MINUTES, currentDate);
+//
+//while (!tweets.isEmpty()) {
+//	// While loop to emit the tuples with the aggregation condition
+//	while (currentDate.compareTo(nextAggregatedDate) <= 0) {
+//		_collector.emit(new Values(tweet.getTweet_id(), tweet
+//				.getSentiment().getSentimentCode(), tweet
+//				.getCreated_at(), nextAggregatedDate, 1));
+//		tweet = tweets.remove(0);
+//		currentDate = tweet.getCreated_at();
+//	}
+//
+//	_collector.emit(new Values(tweet.getTweet_id(), 0, tweet
+//			.getCreated_at(), nextAggregatedDate, 0));
+//
+//	_collector.emit(new Values(tweet.getTweet_id(), 2, tweet
+//			.getCreated_at(), nextAggregatedDate, 0));
+//
+//	_collector.emit(new Values(tweet.getTweet_id(), 4, tweet
+//			.getCreated_at(), nextAggregatedDate, 0));
+//
+//	System.out.println("||Aggregate Date::" + nextAggregatedDate);
+//	nextAggregatedDate = AggregateUtilityFunctions.addMinutesToDate(
+//			AGGREGATION_FACTOR_MINUTES, nextAggregatedDate);
+//	Utils.sleep(SLEEP_FACTOR_MILLI_SEC);
+//}
+// /////////////////////////////////////////////////////////////////////////////////

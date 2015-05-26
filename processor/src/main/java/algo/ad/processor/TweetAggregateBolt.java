@@ -55,7 +55,7 @@ public class TweetAggregateBolt extends BaseRichBolt {
 	private static final int AGGREGATION_FACTOR_MINUTES = 15;// 360; //15
 	// final int TICK_DURATION_SEC = 1;
 	// *******************************
-
+	long startTime ;
 	private static final long serialVersionUID = 5537727428628598519L;
 	// private static final Logger LOG =
 	// Logger.getLogger(TweetAggregateBolt.class);
@@ -69,7 +69,7 @@ public class TweetAggregateBolt extends BaseRichBolt {
 	List<TweetTransferEntity> tweetList = new ArrayList<TweetTransferEntity>(0);
 
 	public TweetAggregateBolt() {
-
+	startTime = 	System.currentTimeMillis();
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -94,33 +94,6 @@ public class TweetAggregateBolt extends BaseRichBolt {
 		} else {
 			countObjAndAck(tuple);
 		}
-	}
-
-	private void emit(int count, int sentiment, Date emitDate) {
-		// LOG.debug("TweetAggregateBolt: Emit Aggregate, Count:"+count+
-		// "||Sentiment:"+sentiment+"||Timestamp: "+date);
-		
-		String str_tweet_ids = "";
-		for (TweetTransferEntity tweetTransferEntity : tweetList) {
-			str_tweet_ids += String.valueOf(tweetTransferEntity.getTimestamp());
-		}
-		
-		if (sentiment == SENTIMENT_LOG) {
-			System.out.println("TweetAggregateBolt: Emit Aggregate, Count:"
-					+ count + "||Sentiment:" + sentiment + "||Timestamp: "
-					+ emitDate + "||tweetListCount::" + tweetList.size()+"|| list::"+str_tweet_ids);
-		}
-
-		TweetAggregateBin bin = new TweetAggregateBin();
-		bin.setTweetList(tweetList);
-		bin.setCounter(count);
-		bin.setDate(emitDate);
-		bin.setSentiment_id(sentiment);
-		currentAggregateCounter = 0;
-		collector.emit(new Values(count, sentiment, emitDate, bin));
-		// System.out.println("sentiment::"+sentiment +"| Count::" + count+
-		// "| tweetListCount::" +tweetList.size());
-		tweetList =  new ArrayList<TweetTransferEntity>(0);
 	}
 
 	private void emitCurrentAggregateCounts() {
@@ -157,7 +130,57 @@ public class TweetAggregateBolt extends BaseRichBolt {
 				System.out.println("Wait");
 			}
 		}
-		// /////////////////////////////////////////////////////////////////////////////////////////
+		
+	}
+
+	private void emit(int count, int sentiment, Date emitDate) {
+		// LOG.debug("TweetAggregateBolt: Emit Aggregate, Count:"+count+
+		// "||Sentiment:"+sentiment+"||Timestamp: "+date);
+		
+		long elapsedTime = System.currentTimeMillis() - startTime;
+		startTime = System.currentTimeMillis();
+		String str_tweet_ids = "";
+		for (TweetTransferEntity tweetTransferEntity : tweetList) {
+			str_tweet_ids += String.valueOf(tweetTransferEntity.getTimestamp());
+		}
+		
+		if (sentiment == SENTIMENT_LOG) {
+			System.out.println("TweetAggregateBolt:exectuion Time:"+elapsedTime/1000+" sec for Bin|| Emit Aggregate, Count:"
+					+ count + "||Sentiment:" + sentiment + "||Timestamp: "
+					+ emitDate + "||tweetListCount::" + tweetList.size()+"|| list::"+str_tweet_ids);
+		}
+
+		TweetAggregateBin bin = new TweetAggregateBin();
+		bin.setTweetList(tweetList);
+		bin.setCounter(count);
+		bin.setDate(emitDate);
+		bin.setSentiment_id(sentiment);
+		currentAggregateCounter = 0;
+		collector.emit(new Values(count, sentiment, emitDate, bin));
+		// System.out.println("sentiment::"+sentiment +"| Count::" + count+
+		// "| tweetListCount::" +tweetList.size());
+		tweetList =  new ArrayList<TweetTransferEntity>(0);
+	}
+	
+	@Override
+	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+		 declarer.declare(new Fields( "count", "sentiment_id",
+		 "ObjTimestamp","AggregateObject"));
+	}
+
+	@Override
+	public Map<String, Object> getComponentConfiguration() {
+		Map<String, Object> conf = new HashMap<String, Object>();
+		// conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, TICK_DURATION_SEC);
+		return conf;
+	}
+
+	
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
 
 		// //OLD CODE FOR
 		// AGGREGATION////////////////////////////////////////////////////////////////
@@ -180,22 +203,9 @@ public class TweetAggregateBolt extends BaseRichBolt {
 		 * counter = 1; } }
 		 */
 		// ////////////////////////////////////////////////////////////////////////////////////////
-	}
 
-	@Override
-	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		 declarer.declare(new Fields( "count", "sentiment_id",
-		 "ObjTimestamp","AggregateObject"));
-	}
 
-	@Override
-	public Map<String, Object> getComponentConfiguration() {
-		Map<String, Object> conf = new HashMap<String, Object>();
-		// conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, TICK_DURATION_SEC);
-		return conf;
-	}
-
-	// private void emitCurrentWindowCounts() {
+//private void emitCurrentWindowCounts() {
 	// // Map<Object, Long> counts = counter.getCountsThenAdvanceWindow();
 	// // int actualWindowLengthInSeconds =
 	// lastModifiedTracker.secondsSinceOldestModification();
@@ -208,4 +218,3 @@ public class TweetAggregateBolt extends BaseRichBolt {
 	//
 	// // emit(counter);
 	// }
-}

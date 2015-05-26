@@ -57,57 +57,57 @@ public final class SentimentAnomalyRunner {
 
 	public static final void main(final String[] args) throws Exception {
 
-		final ApplicationContext applicationContext = new ClassPathXmlApplicationContext(
-				"applicationContext.xml");
-
-		final JmsProvider jmsQueueProvider = new SpringJmsProvider(
-				applicationContext, "jmsConnectionFactory", "notificationQueue");
+//		final ApplicationContext applicationContext = new ClassPathXmlApplicationContext(
+//				"applicationContext.xml");
+//
+//		final JmsProvider jmsQueueProvider = new SpringJmsProvider(
+//				applicationContext, "jmsConnectionFactory", "notificationQueue");
 
 		final TopologyBuilder topologyBuilder = new TopologyBuilder();
 
-		final JmsBolt jmsBolt = new JmsBolt();
-		jmsBolt.setJmsProvider(jmsQueueProvider);
-		jmsBolt.setJmsMessageProducer(new JmsMessageProducer() {
-
-			@Override
-			public final Message toMessage(final Session session,
-					final Tuple tuple) throws JMSException {
-				// final String json = "{\"word\":\"" + input.getString(0) +
-				// "\", \"count\":" + String.valueOf(input.getInteger(1)) + "}";
-
-				List<Object> otherFields = Lists.newArrayList(tuple.getValues());
-				int current_positive_counter = (Integer) otherFields.get(0);
-				int current_positive_anomaly = (Integer) otherFields.get(1);
-
-				int current_negative_counter = (Integer) otherFields.get(2);
-				int current_negative_anomaly = (Integer) otherFields.get(3);
-
-				int current_neutral_counter = (Integer) otherFields.get(4);
-				int current_neutral_anomaly = (Integer) otherFields.get(5);
-
-				Date currentDate = (Date) otherFields.get(6); // 0: counter, 1:
-																// sentement_Id,
-																// 2:Date_object
-
-				DateFormat dateFormat = new SimpleDateFormat(
-						"yyyy/MM/dd HH:mm:ss");
-				Date date = new Date();
-
-				final String json = "{\"x\":\""
-						+ dateFormat.format(currentDate) + "\", \"y0\":\""
-						+ current_negative_counter + "\", \"a0\":\""
-						+ current_negative_anomaly +
-
-						"\", \"y2\":\"" + current_neutral_counter
-						+ "\", \"a2\":\"" + current_neutral_anomaly +
-
-						"\", \"y4\":\"" + current_positive_counter
-						+ "\", \"a4\":\"" + current_positive_anomaly + "\"}";
-
-				// System.out.println(json+"\n");
-				return session.createTextMessage(json);
-			}
-		});
+//		final JmsBolt jmsBolt = new JmsBolt();
+//		jmsBolt.setJmsProvider(jmsQueueProvider);
+//		jmsBolt.setJmsMessageProducer(new JmsMessageProducer() {
+//
+//			@Override
+//			public final Message toMessage(final Session session,
+//					final Tuple tuple) throws JMSException {
+//				// final String json = "{\"word\":\"" + input.getString(0) +
+//				// "\", \"count\":" + String.valueOf(input.getInteger(1)) + "}";
+//
+//				List<Object> otherFields = Lists.newArrayList(tuple.getValues());
+//				int current_positive_counter = (Integer) otherFields.get(0);
+//				int current_positive_anomaly = (Integer) otherFields.get(1);
+//
+//				int current_negative_counter = (Integer) otherFields.get(2);
+//				int current_negative_anomaly = (Integer) otherFields.get(3);
+//
+//				int current_neutral_counter = (Integer) otherFields.get(4);
+//				int current_neutral_anomaly = (Integer) otherFields.get(5);
+//
+//				Date currentDate = (Date) otherFields.get(6); // 0: counter, 1:
+//																// sentement_Id,
+//																// 2:Date_object
+//
+//				DateFormat dateFormat = new SimpleDateFormat(
+//						"yyyy/MM/dd HH:mm:ss");
+//				Date date = new Date();
+//
+//				final String json = "{\"x\":\""
+//						+ dateFormat.format(currentDate) + "\", \"y0\":\""
+//						+ current_negative_counter + "\", \"a0\":\""
+//						+ current_negative_anomaly +
+//
+//						"\", \"y2\":\"" + current_neutral_counter
+//						+ "\", \"a2\":\"" + current_neutral_anomaly +
+//
+//						"\", \"y4\":\"" + current_positive_counter
+//						+ "\", \"a4\":\"" + current_positive_anomaly + "\"}";
+//
+//				// System.out.println(json+"\n");
+//				return session.createTextMessage(json);
+//			}
+//		});
 
 		String spoutId = "ArtificialTweetsEmitterSpout";
 		String counterId = "TweetAggregateBolt";
@@ -125,14 +125,14 @@ public final class SentimentAnomalyRunner {
 		topologyBuilder.setBolt(intermediateRankerId,
 				new AnomalyDetectionBolt_PEWA_STDEV(), 3).fieldsGrouping(
 				counterId, new Fields("sentiment_id"));
-		topologyBuilder.setBolt(BoltSaveAnomaliesToMySQL,
-				new BoltSaveAnomaliesToMySQL(configFile, true))
-				.shuffleGrouping(intermediateRankerId);
-		topologyBuilder.setBolt(summarizeSentimentId,
-				new SummarizeSentimentBolt()).shuffleGrouping(
-				intermediateRankerId);
-		topologyBuilder.setBolt("jmsBolt", jmsBolt).shuffleGrouping(
-				summarizeSentimentId);
+//		topologyBuilder.setBolt(BoltSaveAnomaliesToMySQL,
+//				new BoltSaveAnomaliesToMySQL(configFile, true))
+//				.shuffleGrouping(intermediateRankerId);
+//		topologyBuilder.setBolt(summarizeSentimentId,
+//				new SummarizeSentimentBolt()).shuffleGrouping(
+//				intermediateRankerId);
+//		topologyBuilder.setBolt("jmsBolt", jmsBolt).shuffleGrouping(
+//				summarizeSentimentId);
 
 		// topologyBuilder.setSpout("wordGenerator", new RandomWordFeeder());
 		// topologyBuilder.setBolt("counter", new
