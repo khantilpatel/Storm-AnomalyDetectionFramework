@@ -144,8 +144,8 @@ public class Algorithm_EWMA_STDEV {
 			current_sentiment = m_sentiment;
 			
 			try {
-				log_date_start = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2013-06-28 00:00:00");
-				log_date_end = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2013-07-10 08:00:00");
+				log_date_start = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2013-06-20 00:00:00");
+				log_date_end = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2013-07-30 08:00:00");
 			} catch (ParseException e) {
 				// do nothing
 				e.printStackTrace();
@@ -252,11 +252,11 @@ public class Algorithm_EWMA_STDEV {
 		int finalReturnOutlier = 0;
 		if (RETURN_OUTLIER_TYPE_WINDOW) {
 			if (isWindowOutlier) {
-				if (isWindowOutlier && addative_count < 2) {
+				if (addative_count < 2) {
 					if (SHOW_INNOVATIVE_OUTLIERS) {
 						finalReturnOutlier = 1;
 					}
-				} else if (isWindowOutlier && addative_count >= 2) {
+				} else if (addative_count >= 2) {
 					finalReturnOutlier = 2;
 
 				}

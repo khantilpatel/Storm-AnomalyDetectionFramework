@@ -130,12 +130,13 @@ public class AnomalyDetectionBolt_PEWA_STDEV extends BaseRichBolt {
 			str_tweet_ids += String.valueOf(tweetTransferEntity.getTimestamp());
 		}
 		
+
 		if (currentSentiment == SENTIMENT_LOG) {
 		 System.out.println("AnomalyDetectionBolt_PEWA_STDEV: Emit Aggregate, Count:"+bin.getCounter()+
 		 "||Sentiment:"+currentSentiment+"||Timestamp: "+ bin.getDate()+"||tweetListCount::" +bin.getTweetList().size()
 		 +"|| list::"+str_tweet_ids);
 		}
-	
+
 	
 		// Negative ==0
 		if (currentSentiment == 0) {
