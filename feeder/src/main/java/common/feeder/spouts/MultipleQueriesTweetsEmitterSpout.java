@@ -42,14 +42,18 @@ import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
 import backtype.storm.utils.Utils;
+
 import common.feeder.utility.AggregateUtilityFunctions;
 import common.feeder.utility.ApplicationConfigurationFile;
-import common.feeder.utility.FileIOUtility;
+import common.feeder.utility.DatabaseHelper;
 import common.feeder.utility.TweetJDBCTemplate;
 import common.feeder.utility.TweetJDBCTemplateConnectionPool;
+
+import data.collection.entity.Queries;
 import data.collection.entity.QueriesForEmitter;
 import data.collection.entity.Tweet;
 import data.collection.entity.TweetTableObject;
+import data.collection.json.JsonDashboardSparkline;
 
 public class MultipleQueriesTweetsEmitterSpout extends BaseRichSpout {
 
@@ -68,17 +72,14 @@ public class MultipleQueriesTweetsEmitterSpout extends BaseRichSpout {
 	boolean _isDistributed;
 	SpoutOutputCollector _collector;
 	public static DriverManagerDataSource datasource;
-	public static TweetJDBCTemplate tweetsJDBCTemplate;
+	
 	List<Tweet> tweets;
 	ApplicationConfigurationFile configFile;
 
 	public static Logger LOG = LoggerFactory
 			.getLogger(MultipleQueriesTweetsEmitterSpout.class);
 
-	List<List<TweetTableObject>> listOfQueryData = new ArrayList<List<TweetTableObject>>(
-			0);
-
-	List<Iterator<TweetTableObject>> iterators = new ArrayList<Iterator<TweetTableObject>>(
+	List<JsonDashboardSparkline> listOfQueryData = new ArrayList<JsonDashboardSparkline>(
 			0);
 
 	Map<String, Date> mapList = new HashMap<String, Date>(0);
@@ -97,9 +98,7 @@ public class MultipleQueriesTweetsEmitterSpout extends BaseRichSpout {
 		configFile = _configFile;
 
 		listOfQueryData = initQueryData();
-		for (List<TweetTableObject> tweetList : listOfQueryData) {
-			iterators.add(tweetList.iterator());
-		}
+
 	}
 
 	public void open(Map conf, TopologyContext context,
@@ -113,27 +112,12 @@ public class MultipleQueriesTweetsEmitterSpout extends BaseRichSpout {
 
 	public void nextTuple() {
 
-		// TweetJDBCTemplateConnectionPool
-		// .getTweetJDBCTemplate("test", configFile).jdbcTemplateObject
-		// .query("select * from tweets where query_id"
-		// + " = 2 ORDER BY UNIX_TIMESTAMP ASC",
-		//
-		// new CustomRowCallbackHandler(_collector,
-		// AGGREGATION_FACTOR_MINUTES,
-		// SLEEP_FACTOR_MILLI_SEC, LOG));
-		//
-		// configFile = null;
-
-		// Utils.sleep(500);
-
 		Random randomizer = new Random();
 
-		Iterator<TweetTableObject> iterator = iterators.get(randomizer
-				.nextInt(iterators.size()));
+		int rand = randomizer.nextInt(listOfQueryData.size());
 
-		if (iterator.hasNext()) {
-			System.out.println(iterator.next());
-		}
+		JsonDashboardSparkline jsonDashboardSparkline = listOfQueryData
+				.get(rand);
 
 	}
 
@@ -171,130 +155,58 @@ public class MultipleQueriesTweetsEmitterSpout extends BaseRichSpout {
 	 *********************** user defined functions********************************
 	 */
 
-	List<List<TweetTableObject>> initQueryData() {
+	List<JsonDashboardSparkline> initQueryData() {
 
-		List<List<TweetTableObject>> listOfQueries = FileIOUtility
-				.readTweetListFromFile("tweetList.txt");
+		List<JsonDashboardSparkline> listOfQueries = new ArrayList<JsonDashboardSparkline>(
+				0);
 
-		if (listOfQueries == null) {
-			listOfQueries = new ArrayList<List<TweetTableObject>>(0);
+		List<Queries> queries = new ArrayList<Queries>();
 
-			List<QueriesForEmitter> queries = new ArrayList<QueriesForEmitter>();
+		// *******************************************************************************
+		Queries query = new Queries();
 
-			// *******************************************************************************
-			QueriesForEmitter query = new QueriesForEmitter();
+		query.setDb_name("test");
+		query.setQuery("#tdf");
+		query.setQuery_id(2);
 
-			query.setDb_name("test");
-			query.setQuery("#tdf");
-			query.setQuery_id(2);
-			try {
-				query.setStart_date(new
-						 SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2013-06-20 18:00:00"));
-			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		queries.add(query);
 
-			queries.add(query);
+		// *******************************************************************************
+		 query = new Queries();
+		
+		 query.setDb_name("db_khantilpatel");
+		 query.setQuery("#FinalFour");
+		 query.setQuery_id(9);
+		
+		 queries.add(query);
+		// *******************************************************************************
+		 query = new Queries();
+		
+		 query.setDb_name("db_khantilpatel");
+		 query.setQuery("#WhyImNotVotingForHillary");
+		 query.setQuery_id(33);
+		
+		 queries.add(query);
+		// *****************************************************************************
+		for (Queries query1 : queries) {
 
-			// *******************************************************************************
-//			query = new QueriesForEmitter();
-//
-//			query.setDb_name("");
-//			query.setQuery("");
-//			query.setQuery_id(1);
-//			query.setStart_date(new Date());
-//
-//			queries.add(query);
-			// *******************************************************************************
-//			query = new QueriesForEmitter();
-//
-//			query.setDb_name("");
-//			query.setQuery("");
-//			query.setQuery_id(1);
-//			query.setStart_date(new Date());
-//
-//			queries.add(query);
-			// *****************************************************************************
-			for (QueriesForEmitter query1 : queries) {
-				listOfQueries.add(fetchTweetsForQuery(query1));
-			}
+			TweetJDBCTemplate tweetsJDBCTemplate =TweetJDBCTemplateConnectionPool
+					.getTweetJDBCTemplate(query.getDb_name(), configFile); 
 			
-			FileIOUtility.saveTweetListToFile(listOfQueries, "tweetList.txt");
+			JsonDashboardSparkline jsonSparklineObject = DatabaseHelper
+					.getAggregatedTweetData(tweetsJDBCTemplate, query1,
+							configFile.getSparkline_aggregation_period(),
+							configFile.getSparkline_window_period(), LOG);
+			
+			listOfQueries.add(jsonSparklineObject);
 
 		}
+
 		return listOfQueries;
 
 	}
 
-	List<TweetTableObject> fetchTweetsForQuery(QueriesForEmitter query) {
-
-		List<TweetTableObject> tweets = TweetJDBCTemplateConnectionPool
-				.getTweetJDBCTemplate(query.getDb_name(), configFile)
-				.listTweetTableObjects(
-						"select * from tweets where query_id ="
-								+ query.getQuery_id()
-								+ " ORDER BY UNIX_TIMESTAMP ASC");
-
-		return tweets;
-
-	}
-
-	public void processRow(TweetTableObject tweet, QueriesForEmitter query)
-			throws SQLException {
-		// ///////////////////////////////
-		// TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-		// System.out.println("ATE:Default TimeZone:"+TimeZone.getDefault());
-		Date currentDate = tweet.getCreated_at();
-
-		Date nextAggregatedDate = mapList.get(query.getQuery());
-
-		if (nextAggregatedDate == null) {
-			// nextAggregatedDate = new
-			// SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2013-06-20 18:00:00");
-			nextAggregatedDate = query.getStart_date();
-			// AggregateUtilityFunctions.addMinutesToDate(
-			// AGGREGATION_FACTOR_MINUTES, currentDate);
-
-		}
-
-		// while (!tweets.isEmpty()) {
-		// While loop to emit the tuples with the aggregation condition
-		if (currentDate.compareTo(nextAggregatedDate) <= 0) {
-			_collector.emit(new Values(tweet, tweet.getSentiment(), tweet
-					.getCreated_at(), nextAggregatedDate, 1));
-			// tweet = tweets.remove(0);
-			// currentDate = tweet.getCreated_at();
-		} else {
-			do {
-				_collector.emit(new Values(null, 0, tweet.getCreated_at(),
-						nextAggregatedDate, 0));
-
-				_collector.emit(new Values(null, 2, tweet.getCreated_at(),
-						nextAggregatedDate, 0));
-
-				_collector.emit(new Values(null, 4, tweet.getCreated_at(),
-						nextAggregatedDate, 0));
-
-				// System.out.println("||Aggregate Date::" +
-				// nextAggregatedDate);
-
-				// update for next aggregation range;
-				nextAggregatedDate = AggregateUtilityFunctions
-						.addMinutesToDate(AGGREGATION_FACTOR_MINUTES,
-								nextAggregatedDate);
-
-			} while (currentDate.compareTo(nextAggregatedDate) > 0);
-			_collector.emit(new Values(tweet, tweet.getSentiment(), tweet
-					.getCreated_at(), nextAggregatedDate, 1));
-		}
-
-		// count++;
-
-		// LOG.info("Current cout is:: "+count + " / 449077");
-		Utils.sleep(SLEEP_FACTOR_MILLI_SEC);
-	}
-
+	
 	/**
 	 *******************************************************************************
 	 */

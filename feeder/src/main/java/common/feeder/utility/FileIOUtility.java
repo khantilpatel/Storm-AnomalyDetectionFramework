@@ -12,12 +12,12 @@ import data.collection.entity.TweetTableObject;
 
 public class FileIOUtility {
 
-	public static List<List<TweetTableObject>> readTweetListFromFile(String fileName) {
-		List<List<TweetTableObject>> arraylist = null;
+	public static List<TweetTableObject> readTweetListFromFile(String fileName) {
+		List<TweetTableObject> arraylist = null;
 		try {
 			FileInputStream fis = new FileInputStream(fileName);
 			ObjectInputStream ois = new ObjectInputStream(fis);
-			arraylist = (ArrayList<List<TweetTableObject>>) ois.readObject();
+			arraylist = (ArrayList<TweetTableObject>) ois.readObject();
 			ois.close();
 			fis.close();
 		} catch (IOException ioe) {
@@ -30,7 +30,7 @@ public class FileIOUtility {
 		return arraylist;
 	}
 
-	public static void saveTweetListToFile(List<List<TweetTableObject>> list, String filename) {
+	public static void saveTweetListToFile(List<TweetTableObject> list, String filename) {
 		try {
 			FileOutputStream fos = new FileOutputStream(filename);
 			ObjectOutputStream oos = new ObjectOutputStream(fos);

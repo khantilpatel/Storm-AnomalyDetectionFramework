@@ -165,8 +165,7 @@ public class DatabaseHelper {
 	}
 
 	public static JsonDashboardSparkline getAggregatedTweetData(
-			TweetJDBCTemplate tweetsJDBCTemplateMain, String DB_BASE_URL,
-			String DB_NAME, Queries query, int AGGREGATION_FACTOR_MINUTES,
+			TweetJDBCTemplate tweetsJDBCTemplateMain, Queries query, int AGGREGATION_FACTOR_MINUTES,
 			int WINDOW_PERIOD, Logger LOG) {
 		int aggregate_factor_seconds_sql = AGGREGATION_FACTOR_MINUTES * 60; // *
 																			// Seconds

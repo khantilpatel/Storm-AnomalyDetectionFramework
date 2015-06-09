@@ -95,7 +95,7 @@ public class BoltAggregateSparklineData extends BaseBasicBolt {
 
 		JsonDashboardSparkline jsonSparklineObject = DatabaseHelper
 				.getAggregatedTweetData(tweetsJDBCTemplate,
-						configFile.getJdbc_url(), DB_NAME, query,
+					 query,
 						configFile.getSparkline_aggregation_period(),
 						configFile.getSparkline_window_period(), LOG);
 
