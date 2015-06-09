@@ -25,6 +25,7 @@ import data.collection.mapper.QueriesMapper;
 import data.collection.mapper.TweetAggregateBinMapper;
 import data.collection.mapper.TweetCounterQueryJSONMapper;
 import data.collection.mapper.TweetMapper;
+import data.collection.mapper.TweetTableObjectMapper;
 import data.collection.mapper.UsersMapper;
 
 public class TweetJDBCTemplate implements ITweetDAO, Serializable {
@@ -66,6 +67,12 @@ public class TweetJDBCTemplate implements ITweetDAO, Serializable {
 		List<Tweet> Tweets = jdbcTemplateObject.query(SQL, new TweetMapper());
 
 		return Tweets;
+	}
+	
+	public List<TweetTableObject> listTweetTableObjects(String SQL) {
+		List<TweetTableObject> tweets = jdbcTemplateObject.query(SQL, new TweetTableObjectMapper());
+
+		return tweets;
 	}
 
 	public Queries getQuery(Integer id) {

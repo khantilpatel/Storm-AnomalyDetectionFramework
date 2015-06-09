@@ -104,6 +104,7 @@ public class SpoutTweetSparkline extends BaseRichSpout {
 			LOG.info("<" + index + "> query:::" + query.getQuery());
 			_collector.emit(new Values(query));
 		}
+		
 		Utils.sleep(queryRefreshInterval);
 
 	}

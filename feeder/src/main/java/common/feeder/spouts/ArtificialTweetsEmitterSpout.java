@@ -118,7 +118,6 @@ public class ArtificialTweetsEmitterSpout extends BaseRichSpout {
 		configFile = null;
 		
 		Utils.sleep(500);
-
 	}
 
 	public void ack(Object msgId) {
@@ -146,7 +145,6 @@ public class ArtificialTweetsEmitterSpout extends BaseRichSpout {
 			return null;
 		}
 	}
-
 }
 
 class CustomRowCallbackHandler implements RowCallbackHandler {
