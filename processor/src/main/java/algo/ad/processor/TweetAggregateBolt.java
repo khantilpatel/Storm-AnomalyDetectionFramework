@@ -16,8 +16,8 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
 import com.google.common.collect.Lists;
-
 import common.feeder.utility.AggregateUtilityFunctions;
+
 import data.collection.entity.Tweet;
 import data.collection.entity.TweetTransferEntity;
 
@@ -51,11 +51,11 @@ import data.collection.entity.TweetTransferEntity;
 public class TweetAggregateBolt extends BaseRichBolt {
 
 	// ********Constants**************
-	final static int SENTIMENT_LOG = 2;
-	private static final int AGGREGATION_FACTOR_MINUTES = 15;// 360; //15
+	final static int SENTIMENT_LOG = 0;
+	private static final int AGGREGATION_FACTOR_MINUTES = 60;//15;// 360; //15
 	// final int TICK_DURATION_SEC = 1;
 	// *******************************
-	long startTime ;
+	long startTime;
 	private static final long serialVersionUID = 5537727428628598519L;
 	// private static final Logger LOG =
 	// Logger.getLogger(TweetAggregateBolt.class);
@@ -67,9 +67,26 @@ public class TweetAggregateBolt extends BaseRichBolt {
 	// private final int aggregateLengthInMinutes;
 	private OutputCollector collector;
 	List<TweetTransferEntity> tweetList = new ArrayList<TweetTransferEntity>(0);
+//	FileWriter fw_csv;
+	String filename = "tdf2013_positive";
 
 	public TweetAggregateBolt() {
-	startTime = 	System.currentTimeMillis();
+		startTime = System.currentTimeMillis();
+
+//		try {
+//			fw_csv = new FileWriter(
+//					"C:/Users/KhantilPatel/Dropbox/Thesis/Data-set/tdf2013/"
+//							+ filename + ".csv");
+//			fw_csv.write("date" + "," + "value"
+//					+ System.getProperty("line.separator"));
+//
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+		//
+		// fw_csv.write("date" + "," +"value"
+		// + System.getProperty("line.separator"));
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -90,6 +107,10 @@ public class TweetAggregateBolt extends BaseRichBolt {
 
 		if (0 == tupleType) {// TupleHelpers.isTickTuple(tuple)) {
 			// LOG.debug("TweetAggregateBolt: Received tick tuple, triggering emit of current aggregate counts");
+			if(currentAggregateDate == null)
+			{
+				currentAggregateDate = (Date) otherFields.get(3);
+			}
 			emitCurrentAggregateCounts();
 		} else {
 			countObjAndAck(tuple);
@@ -101,6 +122,9 @@ public class TweetAggregateBolt extends BaseRichBolt {
 			currentAggregateDate = AggregateUtilityFunctions.addMinutesToDate(
 					AGGREGATION_FACTOR_MINUTES, currentAggregateDate);
 		}
+		
+		
+		
 		this.emit(currentAggregateCounter, currentSentiment,
 				currentAggregateDate);
 	}
@@ -111,7 +135,7 @@ public class TweetAggregateBolt extends BaseRichBolt {
 		// COUNT THE TWEETS HERE AND EMIT THEM WHEN TICK IS RECIEVED
 		List<Object> otherFields = Lists.newArrayList(tuple.getValues());
 		Tweet tweet = (Tweet) otherFields.get(0);
-		
+
 		TweetTransferEntity transferEntity = new TweetTransferEntity();
 		transferEntity.setSentiment(tweet.getSentiment().getSentimentCode());
 		transferEntity.setTimestamp(tweet.getTimestamp());
@@ -130,24 +154,27 @@ public class TweetAggregateBolt extends BaseRichBolt {
 				System.out.println("Wait");
 			}
 		}
-		
+
 	}
 
 	private void emit(int count, int sentiment, Date emitDate) {
 		// LOG.debug("TweetAggregateBolt: Emit Aggregate, Count:"+count+
 		// "||Sentiment:"+sentiment+"||Timestamp: "+date);
-		
+
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		startTime = System.currentTimeMillis();
 		String str_tweet_ids = "";
 		for (TweetTransferEntity tweetTransferEntity : tweetList) {
 			str_tweet_ids += String.valueOf(tweetTransferEntity.getTimestamp());
 		}
-		
+
 		if (sentiment == SENTIMENT_LOG) {
-			System.out.println("TweetAggregateBolt:exectuion Time:"+elapsedTime/1000+" sec for Bin|| Emit Aggregate, Count:"
-					+ count + "||Sentiment:" + sentiment + "||Timestamp: "
-					+ emitDate + "||tweetListCount::" + tweetList.size()+"|| list::"+str_tweet_ids);
+			System.out.println("TweetAggregateBolt:exectuion Time:"
+					+ elapsedTime / 1000
+					+ " sec for Bin|| Emit Aggregate, Count:" + count
+					+ "||Sentiment:" + sentiment + "||Timestamp: " + emitDate
+					+ "||tweetListCount::" + tweetList.size() + "|| list::"
+					+ str_tweet_ids);
 		}
 
 		TweetAggregateBin bin = new TweetAggregateBin();
@@ -155,17 +182,33 @@ public class TweetAggregateBolt extends BaseRichBolt {
 		bin.setCounter(count);
 		bin.setDate(emitDate);
 		bin.setSentiment_id(sentiment);
+		
+		if(emitDate == null)
+		{
+			System.out.println("emitDate is null for sentiment_ID:"+ sentiment);
+		}
+		
 		currentAggregateCounter = 0;
 		collector.emit(new Values(count, sentiment, emitDate, bin));
+
+//		try {
+//			if (sentiment == 4) {
+////				fw_csv.write(emitDate + "," + count
+////						+ System.getProperty("line.separator"));
+//			}
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 		// System.out.println("sentiment::"+sentiment +"| Count::" + count+
 		// "| tweetListCount::" +tweetList.size());
-		tweetList =  new ArrayList<TweetTransferEntity>(0);
+		tweetList = new ArrayList<TweetTransferEntity>(0);
 	}
-	
+
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		 declarer.declare(new Fields( "count", "sentiment_id",
-		 "ObjTimestamp","AggregateObject"));
+		declarer.declare(new Fields("count", "sentiment_id", "ObjTimestamp",
+				"AggregateObject"));
 	}
 
 	@Override
@@ -175,46 +218,39 @@ public class TweetAggregateBolt extends BaseRichBolt {
 		return conf;
 	}
 
-	
 }
 
+// /////////////////////////////////////////////////////////////////////////////////////////
 
+// //OLD CODE FOR
+// AGGREGATION////////////////////////////////////////////////////////////////
+/*
+ * List<Object> otherFields = Lists.newArrayList(tuple.getValues()); Date
+ * currentDate = (Date) otherFields.get(2); // 0: tweet_Id, 1: sentement_Id,
+ * 2:Date_object currentSentiment = (Integer) otherFields.get(1);
+ * if(nextAggregateDate == null) { nextAggregateDate = AggregateUtilityFunctions
+ * .addMinutesToDate(aggregateLengthInMinutes, currentDate); counter++; System
+ * .out.println("TweetAggregateBolt: Count: "+counter+" ||"+tuple);
+ * collector.ack(tuple); } else{ if(currentDate.compareTo(nextAggregateDate) <
+ * 0){ counter++; System.out
+ * .println("TweetAggregateBolt++: Count: "+counter+" ||"+tuple);
+ * collector.ack(tuple); } else { this.emit(counter, currentSentiment,
+ * nextAggregateDate); nextAggregateDate = AggregateUtilityFunctions
+ * .addMinutesToDate(aggregateLengthInMinutes, nextAggregateDate); counter = 1;
+ * } }
+ */
+// ////////////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////////////////
-
-		// //OLD CODE FOR
-		// AGGREGATION////////////////////////////////////////////////////////////////
-		/*
-		 * List<Object> otherFields = Lists.newArrayList(tuple.getValues());
-		 * Date currentDate = (Date) otherFields.get(2); // 0: tweet_Id, 1:
-		 * sentement_Id, 2:Date_object currentSentiment = (Integer)
-		 * otherFields.get(1); if(nextAggregateDate == null) { nextAggregateDate
-		 * = AggregateUtilityFunctions
-		 * .addMinutesToDate(aggregateLengthInMinutes, currentDate); counter++;
-		 * System
-		 * .out.println("TweetAggregateBolt: Count: "+counter+" ||"+tuple);
-		 * collector.ack(tuple); } else{
-		 * if(currentDate.compareTo(nextAggregateDate) < 0){ counter++;
-		 * System.out
-		 * .println("TweetAggregateBolt++: Count: "+counter+" ||"+tuple);
-		 * collector.ack(tuple); } else { this.emit(counter, currentSentiment,
-		 * nextAggregateDate); nextAggregateDate = AggregateUtilityFunctions
-		 * .addMinutesToDate(aggregateLengthInMinutes, nextAggregateDate);
-		 * counter = 1; } }
-		 */
-		// ////////////////////////////////////////////////////////////////////////////////////////
-
-
-//private void emitCurrentWindowCounts() {
-	// // Map<Object, Long> counts = counter.getCountsThenAdvanceWindow();
-	// // int actualWindowLengthInSeconds =
-	// lastModifiedTracker.secondsSinceOldestModification();
-	// // lastModifiedTracker.markAsModified();
-	// // if (actualWindowLengthInSeconds != windowLengthInSeconds) {
-	// // LOG.warn(String.format(WINDOW_LENGTH_WARNING_TEMPLATE,
-	// actualWindowLengthInSeconds, windowLengthInSeconds));
-	// // }
-	//
-	//
-	// // emit(counter);
-	// }
+// private void emitCurrentWindowCounts() {
+// // Map<Object, Long> counts = counter.getCountsThenAdvanceWindow();
+// // int actualWindowLengthInSeconds =
+// lastModifiedTracker.secondsSinceOldestModification();
+// // lastModifiedTracker.markAsModified();
+// // if (actualWindowLengthInSeconds != windowLengthInSeconds) {
+// // LOG.warn(String.format(WINDOW_LENGTH_WARNING_TEMPLATE,
+// actualWindowLengthInSeconds, windowLengthInSeconds));
+// // }
+//
+//
+// // emit(counter);
+// }

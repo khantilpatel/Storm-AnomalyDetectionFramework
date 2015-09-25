@@ -27,8 +27,8 @@ public class Algorithm_EWMA_STDEV {
 	private final int WINDOW_SIZE_MIN = 8640;// 4320: 3 days // 8640: 6 days
 	// 1 Day = 1440 ; 2 Day = 2880 ; 3 days = 4320; 6 days = 8640;
 	// ******** LOCAL OUTLIER DETECTION APPROACH*************************
-	private boolean USE_PEWMA = true; // if false by default use PEWMA
-	private final boolean WINDOW_MAD_APPROACH = true; // if false by default//
+	private boolean USE_PEWMA = false; // if false by default use PEWMA
+	private final boolean WINDOW_MAD_APPROACH = false; // if false by default//
 
 	private final double DEVIATION_THRESHOLD_LOCAL = 4;
 	private final double DEVIATION_THRESHOLD_WINDOW = 4;
@@ -44,8 +44,7 @@ public class Algorithm_EWMA_STDEV {
 														// Addative outliers are
 														// shown
 	SimpleDateFormat dateFormat;
-	
-	
+
 	// LocalOutlier is
 	// returned
 
@@ -108,7 +107,7 @@ public class Algorithm_EWMA_STDEV {
 
 	public List<Double> predictions = new ArrayList<Double>();
 	public List<Double> references = Arrays.asList(array_references);
-
+	Date testPeriodDate;
 	// ****************************************************
 
 	boolean flag_Addative = false;
@@ -117,40 +116,38 @@ public class Algorithm_EWMA_STDEV {
 		super();
 		try {
 			dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-			dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-			
-			fw = new FileWriter(m_logFileName+".log");
-			fw_csv = new FileWriter(m_logFileName+".csv");
-			
+			dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+			fw = new FileWriter(m_logFileName + ".log");
+			fw_csv = new FileWriter(m_logFileName + ".csv");
+
 			// Write header to csv
 			String delimiter = ",";
-			fw_csv.write(
-					"date" + delimiter
-					+ "tweets" + delimiter 
-					+ "candidate_anomaly" + delimiter 
-					+ "legitimate_anomaly" + delimiter 
-					+ "EWMA" + delimiter 
-					+ "EWMA_STD" +delimiter
-					+ "EWMA_STD_minus" +delimiter
-					+ "PEWMA" + delimiter
-					+ "PEWMA_STD" + delimiter
-					+ "PEWMA_STD_minus" + delimiter
-					+ "window_STD_mean"  + delimiter 
-					+ "window_STD" +delimiter 
-					+ "window_MAD_median" +delimiter 
-					+ "window_MAD"		
+			fw_csv.write("date" + delimiter + "tweets" + delimiter
+					+ "candidate_anomaly" + delimiter + "legitimate_anomaly"
+					+ delimiter + "EWMA" + delimiter + "EWMA_STD" + delimiter
+					+ "EWMA_STD_minus" + delimiter + "PEWMA" + delimiter
+					+ "PEWMA_STD" + delimiter + "PEWMA_STD_minus" + delimiter
+					+ "window_STD_mean" + delimiter + "window_STD" + delimiter
+					+ "window_MAD_median" + delimiter + "window_MAD"
 					+ System.getProperty("line.separator"));
-			
+
 			current_sentiment = m_sentiment;
-			
+
 			try {
-				log_date_start = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2013-06-20 00:00:00");
-				log_date_end = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2013-07-30 08:00:00");
+				test_period_date = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2015-09-07 02:00:00");//SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2013-06-30 15:30:00");//new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")
+						//.parse("2015-09-07 02:50:00");
+
+				log_date_start = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")
+						.parse("2015-01-20 00:00:00");
+				log_date_end = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")
+						.parse("2015-12-30 08:00:00");
+
 			} catch (ParseException e) {
 				// do nothing
 				e.printStackTrace();
 			}
-			
+
 		} catch (IOException e) {
 			// do nothing
 			e.printStackTrace();
@@ -160,30 +157,25 @@ public class Algorithm_EWMA_STDEV {
 	int addative_count = 0;
 
 	public int find_Outlier(Bin m_Dt, int sentiment) {
-		
+
 		long lStartTime = System.currentTimeMillis();
-		//some tasks
-		
-		 double m_log_EWMA = log_EWMA;
-		 double m_log_EWMA_STD = log_EWMA_STD;
-		 double m_log_PEWMA = log_PEWMA;
-		 double m_log_PEWMA_STD = log_PEWMA_STD;
-		 double m_log_STD_mean = log_STD_mean;
-		 double m_log_STD = log_STD;
-		 double m_log_MAD_median = log_MAD_median;
-		 double m_log_MAD = log_MAD;
-		
-		
+		// some tasks
+
+		double m_log_EWMA = log_EWMA;
+		double m_log_EWMA_STD = log_EWMA_STD;
+		double m_log_PEWMA = log_PEWMA;
+		double m_log_PEWMA_STD = log_PEWMA_STD;
+		double m_log_STD_mean = log_STD_mean;
+		double m_log_STD = log_STD;
+		double m_log_MAD_median = log_MAD_median;
+		double m_log_MAD = log_MAD;
+
 		boolean isLocalOutlier = false;
 		boolean isWindowOutlier = false;
 		Date testDate = null;
-		try {
-			testDate = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")
-					.parse("2013-07-02 15:45:00");
-		} catch (ParseException e) {
-			// DO nothing
-			e.printStackTrace();
-		}
+
+		testDate = test_period_date;
+
 		if (sentiment == 4 && (testDate.compareTo(m_Dt.getDate()) == 0)) {
 
 			System.out.println("debug");
@@ -194,11 +186,15 @@ public class Algorithm_EWMA_STDEV {
 					TEST_PERIOD_MIN, m_Dt.getDate());
 		}
 
+		if (m_Dt.getDate() == null) {
+			System.out.println("m_Dt.getDate() is null");
+		}
+
 		if (m_Dt.getDate().compareTo(test_period_date) >= 0) {
 
 			double LDF = cal_dev_fact(m_Dt.getCount(), local_mean);
-			//double test1 = (local_std_dev / local_mean);
-			//SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
+			// double test1 = (local_std_dev / local_mean);
+			// SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
 
 			if (LDF > DEVIATION_THRESHOLD_LOCAL * (local_std_dev / local_mean)) {
 
@@ -239,13 +235,13 @@ public class Algorithm_EWMA_STDEV {
 
 			local_mean = cal_mean(test_list);
 			local_std_dev = cal_init_mean_dev(test_list);
-			
-			if(LOGGING){
-			log_EWMA = local_mean;
-			log_PEWMA = local_mean;
-			
-			log_EWMA_STD = local_std_dev;
-			log_PEWMA_STD = local_std_dev;
+
+			if (LOGGING) {
+				log_EWMA = local_mean;
+				log_PEWMA = local_mean;
+
+				log_EWMA_STD = local_std_dev;
+				log_PEWMA_STD = local_std_dev;
 			}
 		}
 
@@ -262,98 +258,89 @@ public class Algorithm_EWMA_STDEV {
 				}
 			}
 		} else {
-			if (isLocalOutlier) {				
+			if (isLocalOutlier) {
 				finalReturnOutlier = 1;
-			} else {				
+			} else {
 				finalReturnOutlier = 0;
 			}
 
 		}
 
 		if (LOGGING) {
-			if(	m_Dt.getDate().compareTo(log_date_start) >= 0 && m_Dt.getDate().compareTo(log_date_end) <= 0 ) {
+			if (m_Dt.getDate().compareTo(log_date_start) >= 0
+					&& m_Dt.getDate().compareTo(log_date_end) <= 0) {
 				try {
 					testDate = null;
-					try {
-						testDate = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")
-								.parse("2013-06-30 15:30:00");
-					} catch (ParseException e) {
-						// DO nothing
-						e.printStackTrace();
-					}
-					if (current_sentiment == TweetSentiment.NEGATIVE && (testDate.compareTo(m_Dt.getDate()) == 0)) {
+
+					testDate = test_period_date;// new
+												// SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2013-06-30 15:30:00");
+
+					if (current_sentiment == TweetSentiment.NEGATIVE
+							&& (testDate.compareTo(m_Dt.getDate()) == 0)) {
 
 						System.out.println("debug");
 					}
 
-					
 					String delimiter = "";
-					
+
 					String candidate_anomaly = "";
 					String legitimate_anomaly = "";
-					if(isLocalOutlier)
-					{
+					if (isLocalOutlier) {
 						candidate_anomaly = String.valueOf(m_Dt.getCount());
-						
+
 					}
-					if(finalReturnOutlier == 2)
-					{
+					if (finalReturnOutlier == 2) {
 						legitimate_anomaly = String.valueOf(m_Dt.getCount());
 					}
-					
+
 					delimiter = "\t";
-					fw.write(dateFormat.format(
-							m_Dt.getDate()) + delimiter
-							+ m_Dt.getCount() + delimiter 
-							+ candidate_anomaly + delimiter 
-							+ legitimate_anomaly + delimiter 
-							+ m_log_EWMA + delimiter 
-							+ (m_log_EWMA + m_log_EWMA_STD) +delimiter 
+					fw.write(dateFormat.format(m_Dt.getDate()) + delimiter
+							+ m_Dt.getCount() + delimiter + candidate_anomaly
+							+ delimiter + legitimate_anomaly + delimiter
+							+ m_log_EWMA + delimiter
+							+ (m_log_EWMA + m_log_EWMA_STD) + delimiter
 							+ m_log_PEWMA + delimiter
-							+ (m_log_PEWMA + m_log_PEWMA_STD) + delimiter 
-							+ m_log_STD_mean  + delimiter 
-							+ (m_log_STD_mean + m_log_STD) +delimiter 
-							+ m_log_MAD_median +delimiter 
-							+ (m_log_MAD_median +  m_log_MAD) 						
+							+ (m_log_PEWMA + m_log_PEWMA_STD) + delimiter
+							+ m_log_STD_mean + delimiter
+							+ (m_log_STD_mean + m_log_STD) + delimiter
+							+ m_log_MAD_median + delimiter
+							+ (m_log_MAD_median + m_log_MAD)
 							+ System.getProperty("line.separator"));
-					
+
 					delimiter = ",";
-					String str = dateFormat.format(
-							m_Dt.getDate());
-					
-					
-					fw_csv.write(dateFormat.format(
-							m_Dt.getDate()) + delimiter
-							+ m_Dt.getCount() + delimiter 
-							+ candidate_anomaly + delimiter 
-							+ legitimate_anomaly + delimiter 
-							+ m_log_EWMA + delimiter 
-							+ (m_log_EWMA + m_log_EWMA_STD) +delimiter
-							+ (m_log_EWMA - m_log_EWMA_STD) +delimiter
+					String str = dateFormat.format(m_Dt.getDate());
+
+					fw_csv.write(dateFormat.format(m_Dt.getDate()) + delimiter
+							+ m_Dt.getCount() + delimiter + candidate_anomaly
+							+ delimiter + legitimate_anomaly + delimiter
+							+ m_log_EWMA + delimiter
+							+ (m_log_EWMA + m_log_EWMA_STD) + delimiter
+							+ (m_log_EWMA - m_log_EWMA_STD) + delimiter
 							+ m_log_PEWMA + delimiter
 							+ (m_log_PEWMA + m_log_PEWMA_STD) + delimiter
 							+ (m_log_PEWMA - m_log_PEWMA_STD) + delimiter
-							+ m_log_STD_mean  + delimiter 
-							+ (m_log_STD_mean + m_log_STD) +delimiter 
-							+ m_log_MAD_median +delimiter 
-							+ (m_log_MAD_median +  m_log_MAD) 						
+							+ m_log_STD_mean + delimiter
+							+ (m_log_STD_mean + m_log_STD) + delimiter
+							+ m_log_MAD_median + delimiter
+							+ (m_log_MAD_median + m_log_MAD)
 							+ System.getProperty("line.separator"));
 					
-					} catch (IOException e) {
-						// Do Nothing
-						e.printStackTrace();
-					}
-	
+					fw.flush();
+					fw_csv.flush();
+
+				} catch (IOException e) {
+					// Do Nothing
+					e.printStackTrace();
+				}
+
 			}
 		}
 
-	
-
 		// ********************************************************************
 		long lEndTime = System.currentTimeMillis();
-		 
+
 		long difference = lEndTime - lStartTime;
-	 
+
 		System.out.println("Elapsed milliseconds: " + difference);
 		return finalReturnOutlier;
 
@@ -425,7 +412,8 @@ public class Algorithm_EWMA_STDEV {
 
 		log_s1 = alfa_t * log_s1 + (1 - alfa_t) * m_Dt.getCount();
 
-		log_s2 = alfa_t * log_s2 + (1 - alfa_t) * (m_Dt.getCount() * m_Dt.getCount());
+		log_s2 = alfa_t * log_s2 + (1 - alfa_t)
+				* (m_Dt.getCount() * m_Dt.getCount());
 
 		log_PEWMA = log_s1;
 		log_PEWMA_STD = Math.sqrt(Math.abs(log_s2 - (log_s1 * log_s1)));
@@ -600,14 +588,17 @@ public class Algorithm_EWMA_STDEV {
 	}
 
 	double getMedian(List<Double> median_list) {
-
 		double median = 0;
-		double pos1 = Math.floor((median_list.size() - 1.0) / 2.0);
-		double pos2 = Math.ceil((median_list.size() - 1.0) / 2.0);
-		if (pos1 == pos2) {
-			median = median_list.get((int) pos1);
-		} else {
-			median = (median_list.get((int) pos1) + median_list.get((int) pos2)) / 2.0;
+		
+		if (median_list.size() > 0) {
+			double pos1 = Math.floor((median_list.size() - 1.0) / 2.0);
+			double pos2 = Math.ceil((median_list.size() - 1.0) / 2.0);
+			if (pos1 == pos2) {
+				median = median_list.get((int) pos1);
+			} else {
+				median = (median_list.get((int) pos1) + median_list
+						.get((int) pos2)) / 2.0;
+			}
 		}
 		return median;
 	}

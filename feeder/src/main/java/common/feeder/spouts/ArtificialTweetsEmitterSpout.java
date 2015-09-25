@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,8 +33,6 @@ import org.springframework.jdbc.core.RowCallbackHandler;
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-
-import com.esotericsoftware.minlog.Log;
 
 import backtype.storm.Config;
 import backtype.storm.spout.SpoutOutputCollector;
@@ -43,10 +42,12 @@ import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
 import backtype.storm.utils.Utils;
+
 import common.feeder.utility.AggregateUtilityFunctions;
 import common.feeder.utility.ApplicationConfigurationFile;
 import common.feeder.utility.TweetJDBCTemplate;
 import common.feeder.utility.TweetJDBCTemplateConnectionPool;
+
 import data.collection.entity.Tweet;
 import data.collection.mapper.TweetMapper;
 
@@ -57,8 +58,10 @@ public class ArtificialTweetsEmitterSpout extends BaseRichSpout {
 	
 	//********Constants**************
 	final static int SENTIMENT_LOG = 2;
-	private static final int AGGREGATION_FACTOR_MINUTES = 15;//360; //15
+	private static final int AGGREGATION_FACTOR_MINUTES = 60;//360; //15
 	final long SLEEP_FACTOR_MILLI_SEC = (long)0.5 ; // 1 sec = 1000 msec
+	Date referenceNextAggregateDate;
+	String DATA_BASE_NAME = "live_queries";	//"test";
 	//*******************************
 	
 	
@@ -71,13 +74,20 @@ public class ArtificialTweetsEmitterSpout extends BaseRichSpout {
 	public static TweetJDBCTemplate tweetsJDBCTemplate;
 	List<Tweet> tweets;
 	ApplicationConfigurationFile configFile;
-
+	
 	public static Logger LOG = LoggerFactory
 			.getLogger(ArtificialTweetsEmitterSpout.class);
 	
 	public ArtificialTweetsEmitterSpout(boolean isDistributed, 	ApplicationConfigurationFile _configFile) {
 		_isDistributed = isDistributed;
-
+		
+		try {
+			TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+			referenceNextAggregateDate = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2015-09-06 02:00:00");
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 //		datasource = new DriverManagerDataSource();
 //		datasource.setDriverClassName("com.mysql.jdbc.Driver");
 //		datasource.setUrl("jdbc:mysql://localhost:3307/test");// test-replica
@@ -110,14 +120,14 @@ public class ArtificialTweetsEmitterSpout extends BaseRichSpout {
 	public void nextTuple() {
 		
 		TweetJDBCTemplateConnectionPool
-		.getTweetJDBCTemplate("test",configFile).jdbcTemplateObject.query("select * from tweets where query_id"
-				+ " = 2 ORDER BY UNIX_TIMESTAMP ASC",
+		.getTweetJDBCTemplate(DATA_BASE_NAME,configFile).jdbcTemplateObject.query("select * from tweets where query_id"
+				+ " = 115 ORDER BY UNIX_TIMESTAMP ASC",
 				
-				new CustomRowCallbackHandler(_collector, AGGREGATION_FACTOR_MINUTES, SLEEP_FACTOR_MILLI_SEC, LOG));
+				new CustomRowCallbackHandler(_collector, AGGREGATION_FACTOR_MINUTES, SLEEP_FACTOR_MILLI_SEC, LOG, referenceNextAggregateDate));
 		
 		configFile = null;
 		
-		Utils.sleep(500);
+		Utils.sleep(5000000);
 	}
 
 	public void ack(Object msgId) {
@@ -159,37 +169,33 @@ class CustomRowCallbackHandler implements RowCallbackHandler {
 	TweetMapper mapper = new TweetMapper();
 	Date nextAggregatedDate;
 	Logger LOG;
+	Date referenceNextAggregateDate;
+	
 	public CustomRowCallbackHandler(SpoutOutputCollector _collector,
-			int AGGREGATION_FACTOR_MINUTES, long SLEEP_FACTOR_MILLI_SEC, Logger _LOG) {
+			int AGGREGATION_FACTOR_MINUTES, long SLEEP_FACTOR_MILLI_SEC, Logger _LOG, Date _referenceNextAggregateDate) {
 		super();
+		TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 		this._collector = _collector;
 		this.AGGREGATION_FACTOR_MINUTES = AGGREGATION_FACTOR_MINUTES;
 		this.SLEEP_FACTOR_MILLI_SEC = SLEEP_FACTOR_MILLI_SEC;
-		
+		referenceNextAggregateDate = _referenceNextAggregateDate;
 		LOG = _LOG;
 	}
 
 	@Override
 	public void processRow(ResultSet rs) throws SQLException {
 		// ///////////////////////////////
-		//TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+		
 		//System.out.println("ATE:Default TimeZone:"+TimeZone.getDefault());
 		Tweet tweet = mapper.mapRow(rs, 0);
 		Date currentDate = tweet.getCreated_at();
 
 		if (nextAggregatedDate == null) {
 			
-			try {
-			
-				nextAggregatedDate = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2013-06-20 18:00:00");
+				nextAggregatedDate = referenceNextAggregateDate; //new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2013-06-20 18:00:00");
 						
 					//	AggregateUtilityFunctions.addMinutesToDate(
 						//AGGREGATION_FACTOR_MINUTES, currentDate);
-			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
 		}
 
 		// while (!tweets.isEmpty()) {
@@ -202,6 +208,10 @@ class CustomRowCallbackHandler implements RowCallbackHandler {
 			//currentDate = tweet.getCreated_at();
 		} else {
 			do{
+				if( tweet.getCreated_at() == null)
+				{
+					System.out.println(" tweet.getCreated_at() is null");
+				}
 			_collector.emit(new Values(null, 0, tweet
 					.getCreated_at(), nextAggregatedDate, 0));
 
@@ -224,7 +234,7 @@ class CustomRowCallbackHandler implements RowCallbackHandler {
 						nextAggregatedDate, 1));
 		}
 		count++;
-		LOG.info("Current cout is:: "+count + " / 449077");
+		LOG.info("Current cout is:: "+count + " / 7498");
 		Utils.sleep(SLEEP_FACTOR_MILLI_SEC);
 	}
 

@@ -74,7 +74,7 @@ public class BoltTagTweetsWithQuery extends BaseBasicBolt {
 		// if(otherFields.get(1) != null){
 		queries = (List<Queries>) otherFields.get(1);
 		// }
-
+		
 		TweetTableObject tweetObjectWithQuery_Id = tagCollectionOfTweets(rawtweetObject);
 		// statusList.add(tweetObject);
 		// System.out.println(rawtweetObject.getJsonObjectString());

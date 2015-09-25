@@ -23,7 +23,9 @@ public class TweetMapper implements RowMapper<Tweet> {
 		tweet.setCreated_at(time);
 
 		int temp_sentiment = rs.getInt("sentiment");
-
+		
+		//tweet.setSentiment(TweetSentiment.NEUTRAL);
+		
 		if (temp_sentiment == TweetSentiment.POSITIVE.getSentimentCode()) {
 			tweet.setSentiment(TweetSentiment.POSITIVE);
 		} else if (temp_sentiment == TweetSentiment.NEUTRAL.getSentimentCode()) {

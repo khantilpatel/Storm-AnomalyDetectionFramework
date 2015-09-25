@@ -1,5 +1,7 @@
 package algo.ad.processor;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -51,7 +53,7 @@ import data.collection.entity.TweetTransferEntity;
 public class AnomalyDetectionBolt_PEWA_STDEV extends BaseRichBolt {
 
 	// ********Constants**************
-	final static int SENTIMENT_LOG = 2;
+	final static int SENTIMENT_LOG = 0;
 	// *******************************
 
 	private static final long serialVersionUID = 5537727428628598519L;
@@ -124,7 +126,7 @@ public class AnomalyDetectionBolt_PEWA_STDEV extends BaseRichBolt {
 		currentBin.setCount(bin.getCounter());
 		currentBin.setDate(bin.getDate());
 		
-		List<TweetTransferEntity> tweetList = null;//bin.getTweetList();
+		List<TweetTransferEntity> tweetList = bin.getTweetList();
 		String str_tweet_ids = "";
 		for (TweetTransferEntity tweetTransferEntity : tweetList) {
 			str_tweet_ids += String.valueOf(tweetTransferEntity.getTimestamp());
@@ -137,6 +139,19 @@ public class AnomalyDetectionBolt_PEWA_STDEV extends BaseRichBolt {
 		 +"|| list::"+str_tweet_ids);
 		}
 
+		Date check_date = null;
+		try {
+			check_date = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")
+			.parse("2015-09-15 10:00:00");
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		if(currentBin.getDate().after(check_date) && currentSentiment == SENTIMENT_LOG)
+		{
+			System.out.println();
+		}
 	
 		// Negative ==0
 		if (currentSentiment == 0) {
